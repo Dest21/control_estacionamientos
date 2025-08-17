@@ -1,4 +1,4 @@
-﻿@inherits LayoutView
+﻿@inherits LayoutComponentBase
 @using EstacionamientosApp.Components.Layout
 @using Microsoft.JSInterop
 @inject IJSRuntime JSRuntime
@@ -199,6 +199,7 @@
         {
             await LoadUserInfo();
         }
+        await base.OnAfterRenderAsync(firstRender);
     }
 
     private async Task LoadUserInfo()

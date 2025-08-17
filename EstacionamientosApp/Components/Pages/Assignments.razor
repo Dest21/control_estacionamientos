@@ -8,384 +8,581 @@
 
 <PageTitle>Gestión de Asignaciones</PageTitle>
 
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h1 class="display-5 text-primary">
-                <i class="bi bi-clipboard-check-fill me-3"></i>Gestión de Asignaciones
-            </h1>
-            <p class="lead text-muted">Administra las asignaciones de espacios de estacionamiento</p>
+<!-- Header Section -->
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 font-poppins">Gestión de Asignaciones</h1>
+            <p class="text-gray-600 mt-2">Administra las asignaciones de espacios de estacionamiento</p>
         </div>
+        <button class="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center space-x-2 hover-lift" 
+                @onclick="ShowCreateModal">
+            <i class="bi bi-plus-circle text-lg"></i>
+            <span>Nueva Asignación</span>
+        </button>
     </div>
+</div>
 
-    <!-- Estadísticas -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <div class="card-body text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h3 class="mb-0">@totalAssignments</h3>
-                            <small>Total Asignaciones</small>
-                        </div>
-                        <i class="bi bi-clipboard-data fs-1 opacity-75"></i>
-                    </div>
-                </div>
+<!-- Statistics Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Total Assignments -->
+    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover-lift">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-3xl font-bold">@totalAssignments</h3>
+                <p class="text-indigo-100 font-medium">Total Asignaciones</p>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm bg-gradient" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                <div class="card-body text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h3 class="mb-0">@activeAssignments</h3>
-                            <small>Activas</small>
-                        </div>
-                        <i class="bi bi-check-circle fs-1 opacity-75"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm bg-gradient" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                <div class="card-body text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h3 class="mb-0">@expiredAssignments</h3>
-                            <small>Expiradas</small>
-                        </div>
-                        <i class="bi bi-clock-history fs-1 opacity-75"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm bg-gradient" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-                <div class="card-body text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h3 class="mb-0">@cancelledAssignments</h3>
-                            <small>Canceladas</small>
-                        </div>
-                        <i class="bi bi-x-circle fs-1 opacity-75"></i>
-                    </div>
-                </div>
+            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                <i class="bi bi-clipboard-data text-2xl"></i>
             </div>
         </div>
     </div>
 
-    <!-- Filtros -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">Buscar</label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control" placeholder="Cliente, auto o espacio..." 
-                               @bind="searchTerm" @onkeypress="OnSearchKeyPress" />
+    <!-- Active Assignments -->
+    <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover-lift">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-3xl font-bold">@activeAssignments</h3>
+                <p class="text-green-100 font-medium">Activas</p>
+            </div>
+            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                <i class="bi bi-check-circle text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expired Assignments -->
+    <div class="bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover-lift">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-3xl font-bold">@expiredAssignments</h3>
+                <p class="text-orange-100 font-medium">Expiradas</p>
+            </div>
+            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                <i class="bi bi-clock-history text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancelled Assignments -->
+    <div class="bg-gradient-to-r from-pink-500 to-rose-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover-lift">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-3xl font-bold">@cancelledAssignments</h3>
+                <p class="text-pink-100 font-medium">Canceladas</p>
+            </div>
+            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                <i class="bi bi-x-circle text-2xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-2xl shadow-soft p-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-4">
+        <div class="lg:col-span-2">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Buscar</label>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="bi bi-search text-gray-400"></i>
+                </div>
+                <input type="text" 
+                       class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200" 
+                       placeholder="Cliente, auto o espacio..." 
+                       @bind="searchTerm" 
+                       @onkeypress="OnSearchKeyPress" />
+            </div>
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Cliente</label>
+            <select class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200" 
+                    @bind="selectedClientId" @bind:after="FilterAssignments">
+                <option value="">Todos los clientes</option>
+                @if (allClients?.Any() == true)
+                {
+                    @foreach (var client in allClients)
+                    {
+                        <option value="@client.Id">@client.FullName</option>
+                    }
+                }
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Estado</label>
+            <select class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200" 
+                    @bind="selectedStatus" @bind:after="FilterAssignments">
+                <option value="">Todos</option>
+                <option value="Active">Activo</option>
+                <option value="Expired">Expirado</option>
+                <option value="Cancelled">Cancelado</option>
+                <option value="Suspended">Suspendido</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Fecha Desde</label>
+            <input type="date" 
+                   class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200" 
+                   @bind="startDate" @bind:after="FilterAssignments" />
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Fecha Hasta</label>
+            <input type="date" 
+                   class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200" 
+                   @bind="endDate" @bind:after="FilterAssignments" />
+        </div>
+    </div>
+    <div class="flex justify-end space-x-3">
+        <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2" 
+                @onclick="ClearFilters">
+            <i class="bi bi-arrow-clockwise"></i>
+            <span>Limpiar</span>
+        </button>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <div class="flex justify-center items-center py-20">
+        <div class="relative">
+            <div class="w-16 h-16 border-4 border-purple-200 border-t-purple-500 rounded-full animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <i class="bi bi-clipboard-check text-purple-500 text-xl"></i>
+            </div>
+        </div>
+    </div>
+}
+else if (assignments?.Any() == true)
+{
+    <!-- Assignments Cards -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        @foreach (var assignment in assignments)
+        {
+            <div class="bg-white rounded-2xl shadow-soft hover:shadow-medium transition-all duration-300 overflow-hidden hover-lift @(assignment.IsCurrentlyActive ? "border-l-4 border-green-500" : "border-l-4 border-gray-300")">
+                <!-- Assignment Header -->
+                <div class="@(assignment.IsCurrentlyActive ? "bg-gradient-to-r from-green-50 to-emerald-50" : "bg-gradient-to-r from-gray-50 to-gray-100") p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 @(assignment.IsCurrentlyActive ? "bg-green-500" : "bg-gray-400") rounded-lg flex items-center justify-center">
+                                <i class="bi bi-@(GetStatusIcon(assignment.Status)) text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">@assignment.Client?.FullName</h3>
+                                <p class="text-gray-600 text-sm">@assignment.Client?.Email</p>
+                            </div>
+                        </div>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium @(GetStatusColorClasses(assignment.Status))">
+                            @GetStatusText(assignment.Status)
+                        </span>
                     </div>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label fw-semibold">Cliente</label>
-                    <select class="form-select" @bind="selectedClientId" @bind:after="FilterAssignments">
-                        <option value="">Todos los clientes</option>
-                        @if (allClients?.Any() == true)
-                        {
-                            @foreach (var client in allClients)
+
+                <!-- Assignment Details -->
+                <div class="p-4 space-y-4">
+                    <!-- Vehicle Info -->
+                    <div class="flex items-center space-x-3 p-3 bg-blue-50 rounded-xl">
+                        <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                            <i class="bi bi-car-front text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-900">@assignment.Car?.LicensePlate</p>
+                            <p class="text-gray-600 text-sm">@assignment.Car?.Brand @assignment.Car?.Model</p>
+                        </div>
+                    </div>
+
+                    <!-- Parking Space Info -->
+                    <div class="flex items-center space-x-3 p-3 bg-yellow-50 rounded-xl">
+                        <div class="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
+                            <i class="bi bi-geo-alt text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-900">@assignment.ParkingSpace?.SpaceNumber</p>
+                            <p class="text-gray-600 text-sm">@assignment.ParkingSpace?.Zone</p>
+                        </div>
+                    </div>
+
+                    <!-- Date Info -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="text-center p-3 bg-gray-50 rounded-xl">
+                            <p class="text-gray-600 text-xs">Asignado</p>
+                            <p class="font-semibold text-gray-900">@assignment.AssignedDate.ToString("dd/MM/yyyy")</p>
+                            <p class="text-gray-500 text-xs">@assignment.AssignedDate.ToString("HH:mm")</p>
+                        </div>
+                        <div class="text-center p-3 bg-gray-50 rounded-xl">
+                            <p class="text-gray-600 text-xs">Vigencia</p>
+                            @if (assignment.StartDate.HasValue && assignment.EndDate.HasValue)
                             {
-                                <option value="@client.Id">@client.FullName</option>
+                                <p class="font-semibold text-gray-900">@assignment.EndDate.Value.ToString("dd/MM/yyyy")</p>
+                                <p class="text-gray-500 text-xs">@assignment.EndDate.Value.ToString("HH:mm")</p>
                             }
-                        }
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label fw-semibold">Estado</label>
-                    <select class="form-select" @bind="selectedStatus" @bind:after="FilterAssignments">
-                        <option value="">Todos</option>
-                        <option value="Active">Activo</option>
-                        <option value="Expired">Expirado</option>
-                        <option value="Cancelled">Cancelado</option>
-                        <option value="Suspended">Suspendido</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label fw-semibold">Fecha Desde</label>
-                    <input type="date" class="form-control" @bind="startDate" @bind:after="FilterAssignments" />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label fw-semibold">Fecha Hasta</label>
-                    <input type="date" class="form-control" @bind="endDate" @bind:after="FilterAssignments" />
-                </div>
-                <div class="col-md-1">
-                    <label class="form-label">&nbsp;</label>
-                    <div class="d-grid">
-                        <button class="btn btn-outline-secondary" @onclick="ClearFilters" title="Limpiar filtros">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
+                            else
+                            {
+                                <p class="font-semibold text-gray-900">Sin límite</p>
+                                <p class="text-gray-500 text-xs">Permanente</p>
+                            }
+                        </div>
                     </div>
+
+                    @if (!string.IsNullOrEmpty(assignment.Notes))
+                    {
+                        <div class="p-3 bg-purple-50 rounded-xl">
+                            <p class="text-gray-600 text-xs mb-1">Notas:</p>
+                            <p class="text-gray-800 text-sm">@assignment.Notes</p>
+                        </div>
+                    }
+                </div>
+
+                <!-- Actions -->
+                <div class="p-4 bg-gray-50 flex space-x-2">
+                    <button class="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 py-2 px-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-1" 
+                            @onclick="() => ShowEditModal(assignment)">
+                        <i class="bi bi-pencil text-sm"></i>
+                        <span class="text-xs">Editar</span>
+                    </button>
+                    <button class="flex-1 bg-green-50 hover:bg-green-100 text-green-600 py-2 px-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-1"
+                            @onclick="() => ShowViewModal(assignment)">
+                        <i class="bi bi-eye text-sm"></i>
+                        <span class="text-xs">Ver</span>
+                    </button>
+                    @if (assignment.Status == "Active")
+                    {
+                        <button class="bg-red-50 hover:bg-red-100 text-red-600 py-2 px-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center"
+                                @onclick="() => ShowRevokeConfirmation(assignment)">
+                            <i class="bi bi-x-circle text-sm"></i>
+                        </button>
+                    }
                 </div>
             </div>
-            <div class="row mt-3">
-                <div class="col-12 text-end">
-                    <button class="btn btn-primary" @onclick="ShowCreateModal">
-                        <i class="bi bi-plus-circle"></i> Nueva Asignación
+        }
+    </div>
+}
+else
+{
+    <!-- Empty State -->
+    <div class="text-center py-20">
+        <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="bi bi-clipboard-x text-gray-400 text-4xl"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">No se encontraron asignaciones</h3>
+        <p class="text-gray-600 mb-6">Intenta ajustar los filtros o crear una nueva asignación</p>
+        <button class="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300" 
+                @onclick="ShowCreateModal">
+            <i class="bi bi-plus-circle mr-2"></i>
+            Crear Asignación
+        </button>
+    </div>
+}
+
+<!-- Create/Edit Modal -->
+@if (showModal)
+{
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @onclick="CloseModal">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" @onclick:stopPropagation="true">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+                            <i class="bi bi-@(isEditing ? "pencil" : "plus-circle") text-white"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900">@(isEditing ? "Editar Asignación" : "Nueva Asignación")</h2>
+                    </div>
+                    <button class="text-gray-400 hover:text-gray-600 transition-colors duration-200" @onclick="CloseModal">
+                        <i class="bi bi-x-lg text-xl"></i>
                     </button>
                 </div>
             </div>
+
+            <!-- Modal Body -->
+            <div class="p-6">
+                <EditForm Model="currentAssignment" OnValidSubmit="SaveAssignment">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6" />
+
+                    <div class="space-y-6">
+                        <!-- Client and Vehicle Row -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Cliente</label>
+                                <select class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                                        value="@currentAssignment.ClientId" @onchange="OnClientChangedEvent">
+                                    <option value="0">Seleccionar cliente...</option>
+                                    @if (allClients?.Any() == true)
+                                    {
+                                        @foreach (var client in allClients.Where(c => c.IsActive))
+                                        {
+                                            <option value="@client.Id">@client.FullName</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Vehículo</label>
+                                <select class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                                        @bind="currentAssignment.CarId">
+                                    <option value="0">Seleccionar vehículo...</option>
+                                    @if (clientCars?.Any() == true)
+                                    {
+                                        @foreach (var car in clientCars)
+                                        {
+                                            <option value="@car.Id">@car.DisplayName</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Parking Space and Status Row -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Espacio de Estacionamiento</label>
+                                <select class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                                        @bind="currentAssignment.ParkingSpaceId">
+                                    <option value="0">Seleccionar espacio...</option>
+                                    @if (availableSpaces?.Any() == true)
+                                    {
+                                        @foreach (var space in availableSpaces)
+                                        {
+                                            <option value="@space.Id">@space.DisplayName (@space.SpaceType)</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Estado</label>
+                                <select class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                                        @bind="currentAssignment.Status">
+                                    <option value="Active">Activo</option>
+                                    <option value="Suspended">Suspendido</option>
+                                    <option value="Cancelled">Cancelado</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Date Range Row -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Fecha y Hora de Inicio</label>
+                                <input type="datetime-local" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                                       @bind="currentAssignment.StartDate" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Fecha y Hora de Fin</label>
+                                <input type="datetime-local" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                                       @bind="currentAssignment.EndDate" />
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Notas</label>
+                            <textarea class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                                      rows="3" @bind="currentAssignment.Notes"
+                                      placeholder="Notas adicionales sobre la asignación..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="flex justify-end space-x-3 mt-8 pt-6 border-t border-gray-100">
+                        <button type="button" 
+                                class="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200" 
+                                @onclick="CloseModal">
+                            Cancelar
+                        </button>
+                        <button type="submit" 
+                                class="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center space-x-2" 
+                                disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            }
+                            else
+                            {
+                                <i class="bi bi-@(isEditing ? "check-circle" : "plus-circle")"></i>
+                            }
+                            <span>@(isEditing ? "Actualizar" : "Crear")</span>
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
         </div>
     </div>
+}
 
-    @if (isLoading)
-    {
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
-            <p class="mt-2 text-muted">Cargando asignaciones...</p>
-        </div>
-    }
-    else if (assignments?.Any() == true)
-    {
-        <div class="card border-0 shadow-sm">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-dark">
-                            <tr>
-                                <th class="border-0">Cliente</th>
-                                <th class="border-0">Vehículo</th>
-                                <th class="border-0">Espacio</th>
-                                <th class="border-0">Fecha Asignación</th>
-                                <th class="border-0">Vigencia</th>
-                                <th class="border-0">Estado</th>
-                                <th class="border-0 text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var assignment in assignments)
-                            {
-                                <tr class="@(assignment.IsCurrentlyActive ? "" : "table-light")">
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
-                                                <i class="bi bi-person"></i>
-                                            </div>
-                                            <div>
-                                                <div class="fw-semibold">@assignment.Client?.FullName</div>
-                                                <small class="text-muted">@assignment.Client?.Email</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-sm bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2">
-                                                <i class="bi bi-car-front"></i>
-                                            </div>
-                                            <div>
-                                                <div class="fw-semibold">@assignment.Car?.LicensePlate</div>
-                                                <small class="text-muted">@assignment.Car?.Brand @assignment.Car?.Model</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-sm bg-warning text-white rounded-circle d-flex align-items-center justify-content-center me-2">
-                                                <i class="bi bi-geo-alt"></i>
-                                            </div>
-                                            <div>
-                                                <div class="fw-semibold">@assignment.ParkingSpace?.SpaceNumber</div>
-                                                <small class="text-muted">@assignment.ParkingSpace?.Zone</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="fw-semibold">@assignment.AssignedDate.ToString("dd/MM/yyyy")</div>
-                                        <small class="text-muted">@assignment.AssignedDate.ToString("HH:mm")</small>
-                                    </td>
-                                    <td>
-                                        @if (assignment.StartDate.HasValue && assignment.EndDate.HasValue)
-                                        {
-                                            <div class="fw-semibold">@assignment.StartDate.Value.ToString("dd/MM/yyyy")</div>
-                                            <small class="text-muted">hasta @assignment.EndDate.Value.ToString("dd/MM/yyyy")</small>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">Sin límite</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-@(GetStatusColor(assignment.Status)) fs-6">
-                                            <i class="bi bi-@(GetStatusIcon(assignment.Status)) me-1"></i>
-                                            @GetStatusText(assignment.Status)
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="btn-group" role="group">
-                                            <button class="btn btn-outline-primary btn-sm" @onclick="() => ShowEditModal(assignment)" title="Editar">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-outline-info btn-sm" @onclick="() => ViewAssignment(assignment)" title="Ver detalles">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                            @if (assignment.Status == "Active")
-                                            {
-                                                <button class="btn btn-outline-warning btn-sm" @onclick="() => RevokeAssignment(assignment)" title="Revocar">
-                                                    <i class="bi bi-x-circle"></i>
-                                                </button>
-                                            }
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="text-center py-5">
-            <i class="bi bi-clipboard-x display-1 text-muted"></i>
-            <h4 class="mt-3 text-muted">No se encontraron asignaciones</h4>
-            <p class="text-muted">Intenta ajustar los filtros o crear una nueva asignación</p>
-        </div>
-    }
-</div>
-
-<!-- Modal para crear/editar -->
-@if (showModal)
+<!-- Success/Error Toast -->
+@if (showSuccessToast)
 {
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">
-                        <i class="bi bi-@(isEditing ? "pencil" : "plus-circle") me-2"></i>
-                        @(isEditing ? "Editar Asignación" : "Nueva Asignación")
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" @onclick="CloseModal"></button>
+    <div class="fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 animate-fade-in">
+        <div class="flex items-center space-x-2">
+            <i class="bi bi-check-circle"></i>
+            <span>@successMessage</span>
+        </div>
+    </div>
+}
+
+@if (showErrorToast)
+{
+    <div class="fixed top-4 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 animate-fade-in">
+        <div class="flex items-center space-x-2">
+            <i class="bi bi-exclamation-triangle"></i>
+            <span>@errorMessage</span>
+        </div>
+    </div>
+}
+
+<!-- View Details Modal -->
+@if (showViewModal && selectedAssignmentForView != null)
+{
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @onclick="CloseViewModal">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full" @onclick:stopPropagation="true">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+                            <i class="bi bi-clipboard-data text-white"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900">Detalles de la Asignación</h2>
+                    </div>
+                    <button class="text-gray-400 hover:text-gray-600 transition-colors duration-200" @onclick="CloseViewModal">
+                        <i class="bi bi-x-lg text-xl"></i>
+                    </button>
                 </div>
-                <div class="modal-body">
-                    <EditForm Model="currentAssignment" OnValidSubmit="SaveAssignment">
-                        <DataAnnotationsValidator />
-                        <ValidationSummary class="alert alert-danger" />
+            </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Cliente</label>
-                                    <InputSelect class="form-select" @bind-Value="currentAssignment.ClientId" @bind:after="OnClientChanged">
-                                        <option value="">Seleccionar cliente...</option>
-                                        @if (allClients?.Any() == true)
-                                        {
-                                            @foreach (var client in allClients.Where(c => c.IsActive))
-                                            {
-                                                <option value="@client.Id">@client.FullName</option>
-                                            }
-                                        }
-                                    </InputSelect>
-                                    <ValidationMessage For="@(() => currentAssignment.ClientId)" />
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Vehículo</label>
-                                    <InputSelect class="form-select" @bind-Value="currentAssignment.CarId">
-                                        <option value="">Seleccionar vehículo...</option>
-                                        @if (clientCars?.Any() == true)
-                                        {
-                                            @foreach (var car in clientCars)
-                                            {
-                                                <option value="@car.Id">@car.DisplayName</option>
-                                            }
-                                        }
-                                    </InputSelect>
-                                    <ValidationMessage For="@(() => currentAssignment.CarId)" />
-                                </div>
-                            </div>
+            <!-- Modal Body -->
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Client Information -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-500 mb-1">Cliente</label>
+                            <p class="text-xl font-bold text-gray-900">@selectedAssignmentForView.Client?.FullName</p>
+                            <p class="text-gray-600">@selectedAssignmentForView.Client?.Email</p>
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Espacio de Estacionamiento</label>
-                                    <InputSelect class="form-select" @bind-Value="currentAssignment.ParkingSpaceId">
-                                        <option value="">Seleccionar espacio...</option>
-                                        @if (availableSpaces?.Any() == true)
-                                        {
-                                            @foreach (var space in availableSpaces)
-                                            {
-                                                <option value="@space.Id">@space.DisplayName (@space.SpaceType)</option>
-                                            }
-                                        }
-                                    </InputSelect>
-                                    <ValidationMessage For="@(() => currentAssignment.ParkingSpaceId)" />
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Estado</label>
-                                    <InputSelect class="form-select" @bind-Value="currentAssignment.Status">
-                                        <option value="Active">Activo</option>
-                                        <option value="Suspended">Suspendido</option>
-                                        <option value="Cancelled">Cancelado</option>
-                                    </InputSelect>
-                                </div>
-                            </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-500 mb-1">Vehículo</label>
+                            <p class="text-lg font-semibold text-gray-900">@selectedAssignmentForView.Car?.LicensePlate</p>
+                            <p class="text-gray-600">@selectedAssignmentForView.Car?.Brand @selectedAssignmentForView.Car?.Model</p>
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Fecha de Inicio</label>
-                                    <InputDate class="form-control" @bind-Value="currentAssignment.StartDate" />
-                                </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-500 mb-1">Espacio</label>
+                            <p class="text-lg font-semibold text-gray-900">@selectedAssignmentForView.ParkingSpace?.SpaceNumber</p>
+                            <p class="text-gray-600">@selectedAssignmentForView.ParkingSpace?.Zone - @selectedAssignmentForView.ParkingSpace?.SpaceType</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Assignment Information -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-500 mb-1">Estado</label>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium @(GetStatusColorClasses(selectedAssignmentForView.Status))">
+                                @GetStatusText(selectedAssignmentForView.Status)
+                            </span>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-500 mb-1">Fecha de Asignación</label>
+                            <p class="text-lg text-gray-900">@selectedAssignmentForView.AssignedDate.ToString("dd/MM/yyyy HH:mm")</p>
+                        </div>
+                        @if (selectedAssignmentForView.StartDate.HasValue)
+                        {
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-500 mb-1">Fecha y Hora de Inicio</label>
+                                <p class="text-lg text-gray-900">@selectedAssignmentForView.StartDate.Value.ToString("dd/MM/yyyy HH:mm")</p>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Fecha de Fin</label>
-                                    <InputDate class="form-control" @bind-Value="currentAssignment.EndDate" />
-                                </div>
+                        }
+                        @if (selectedAssignmentForView.EndDate.HasValue)
+                        {
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-500 mb-1">Fecha y Hora de Fin</label>
+                                <p class="text-lg text-gray-900">@selectedAssignmentForView.EndDate.Value.ToString("dd/MM/yyyy HH:mm")</p>
                             </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Notas</label>
-                            <InputTextArea class="form-control" rows="3" @bind-Value="currentAssignment.Notes" 
-                                           placeholder="Notas adicionales sobre la asignación..." />
-                        </div>
-
-                        <div class="modal-footer border-0 px-0">
-                            <button type="button" class="btn btn-outline-secondary" @onclick="CloseModal">
-                                <i class="bi bi-x-circle"></i> Cancelar
-                            </button>
-                            <button type="submit" class="btn btn-primary" disabled="@isSaving">
-                                @if (isSaving)
-                                {
-                                    <span class="spinner-border spinner-border-sm me-2"></span>
-                                }
-                                <i class="bi bi-@(isEditing ? "check-circle" : "plus-circle")"></i>
-                                @(isEditing ? "Actualizar" : "Crear")
-                            </button>
-                        </div>
-                    </EditForm>
+                        }
+                    </div>
                 </div>
+                
+                @if (!string.IsNullOrEmpty(selectedAssignmentForView.Notes))
+                {
+                    <div class="mt-6">
+                        <label class="block text-sm font-semibold text-gray-500 mb-2">Notas</label>
+                        <p class="text-gray-900 bg-gray-50 p-4 rounded-lg">@selectedAssignmentForView.Notes</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex justify-end p-6 border-t border-gray-100">
+                <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold transition-all duration-200"
+                        @onclick="CloseViewModal">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Revoke Confirmation Modal -->
+@if (showRevokeModal && selectedAssignmentForRevoke != null)
+{
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                        <i class="bi bi-exclamation-triangle text-red-600"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-900">Confirmar Revocación</h2>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6">
+                <p class="text-gray-700 mb-4">
+                    ¿Está seguro de que desea revocar la asignación del espacio <strong>@selectedAssignmentForRevoke.ParkingSpace?.SpaceNumber</strong> para <strong>@selectedAssignmentForRevoke.Client?.FullName</strong>?
+                </p>
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div class="flex items-start space-x-2">
+                        <i class="bi bi-exclamation-triangle text-yellow-600 mt-0.5"></i>
+                        <div class="text-sm text-yellow-800">
+                            <p class="font-semibold">Advertencia:</p>
+                            <p>Esta acción cambiará el estado de la asignación a "Cancelado" y liberará el espacio de estacionamiento.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex justify-end space-x-3 p-6 border-t border-gray-100">
+                <button class="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200"
+                        @onclick="CancelRevoke">
+                    Cancelar
+                </button>
+                <button class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2"
+                        @onclick="ConfirmRevoke" disabled="@isRevoking">
+                    @if (isRevoking)
+                    {
+                        <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    }
+                    else
+                    {
+                        <i class="bi bi-x-circle"></i>
+                    }
+                    <span>Revocar</span>
+                </button>
             </div>
         </div>
     </div>
 }
 
 <style>
-    .avatar-sm {
-        width: 32px;
-        height: 32px;
-        font-size: 14px;
+    .animate-fade-in {
+        animation: fadeIn 0.3s ease-in-out;
     }
-    
-    .bg-gradient {
-        background-image: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-info) 100%);
+
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 </style>
 
@@ -395,6 +592,8 @@
     private List<Car>? clientCars;
     private List<ParkingSpace>? availableSpaces;
     private ParkingAssignment currentAssignment = new();
+    private ParkingAssignment? selectedAssignmentForView;
+    private ParkingAssignment? selectedAssignmentForRevoke;
     
     private string searchTerm = "";
     private string selectedClientId = "";
@@ -403,9 +602,16 @@
     private DateTime? endDate;
     
     private bool showModal = false;
+    private bool showViewModal = false;
+    private bool showRevokeModal = false;
     private bool isEditing = false;
     private bool isLoading = true;
     private bool isSaving = false;
+    private bool isRevoking = false;
+    private bool showSuccessToast = false;
+    private bool showErrorToast = false;
+    private string successMessage = "";
+    private string errorMessage = "";
 
     private int totalAssignments;
     private int activeAssignments;
@@ -518,12 +724,21 @@
         await LoadAssignments();
     }
 
+    private async Task OnClientChangedEvent(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int clientId))
+        {
+            currentAssignment.ClientId = clientId;
+            await OnClientChanged();
+        }
+    }
+
     private async Task OnClientChanged()
     {
-        if (!string.IsNullOrEmpty(selectedClientId) && int.TryParse(selectedClientId, out int clientId))
+        if (currentAssignment.ClientId > 0)
         {
             clientCars = await DbContext.Cars
-                .Where(c => c.ClientId == clientId && c.IsActive)
+                .Where(c => c.ClientId == currentAssignment.ClientId && c.IsActive)
                 .OrderBy(c => c.LicensePlate)
                 .ToListAsync();
         }
@@ -536,14 +751,23 @@
         StateHasChanged();
     }
 
+    private void CancelCreate()
+    {
+        showModal = false;
+        currentAssignment = new ParkingAssignment();
+        clientCars = new List<Car>();
+        StateHasChanged();
+    }
+
     private void ShowCreateModal()
     {
-        currentAssignment = new ParkingAssignment 
-        { 
-            Status = "Active", 
+        currentAssignment = new ParkingAssignment
+        {
+            Status = "Active",
             IsActive = true,
-            StartDate = DateTime.Today,
-            EndDate = DateTime.Today.AddMonths(1)
+            AssignedDate = DateTime.Now,
+            StartDate = DateTime.Now,
+            EndDate = DateTime.Now.AddMonths(1)
         };
         clientCars = new List<Car>();
         isEditing = false;
@@ -553,7 +777,8 @@
     private void ShowEditModal(ParkingAssignment assignment)
     {
         currentAssignment = new ParkingAssignment
-        {
+        
+{
             Id = assignment.Id,
             ClientId = assignment.ClientId,
             CarId = assignment.CarId,
@@ -566,7 +791,7 @@
         };
         
         // Load cars for the selected client
-        _ = OnClientChanged();
+        _ = Task.Run(async () => await OnClientChanged());
         
         isEditing = true;
         showModal = true;
@@ -608,10 +833,16 @@
             CloseModal();
             await LoadAssignments();
             await LoadStatistics();
+            
+            successMessage = isEditing ? "Asignación actualizada exitosamente." : "Asignación creada exitosamente.";
+            showSuccessToast = true;
+            _ = Task.Delay(3000).ContinueWith(_ => InvokeAsync(() => { showSuccessToast = false; StateHasChanged(); }));
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Error al guardar: {ex.Message}");
+            errorMessage = $"Error al guardar: {ex.Message}";
+            showErrorToast = true;
+            _ = Task.Delay(3000).ContinueWith(_ => InvokeAsync(() => { showErrorToast = false; StateHasChanged(); }));
         }
         finally
         {
@@ -619,45 +850,72 @@
         }
     }
 
-    private async Task ViewAssignment(ParkingAssignment assignment)
+    private void ShowViewModal(ParkingAssignment assignment)
     {
-        var details = $"Cliente: {assignment.Client?.FullName}\n" +
-                     $"Vehículo: {assignment.Car?.DisplayName}\n" +
-                     $"Espacio: {assignment.ParkingSpace?.DisplayName}\n" +
-                     $"Estado: {assignment.Status}\n" +
-                     $"Fecha: {assignment.AssignedDate:dd/MM/yyyy}\n";
-        
-        if (!string.IsNullOrEmpty(assignment.Notes))
-            details += $"Notas: {assignment.Notes}";
-            
-        await JSRuntime.InvokeVoidAsync("alert", details);
+        selectedAssignmentForView = assignment;
+        showViewModal = true;
     }
 
-    private async Task RevokeAssignment(ParkingAssignment assignment)
+    private void CloseViewModal()
     {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"¿Está seguro de revocar la asignación del espacio {assignment.ParkingSpace?.SpaceNumber} para {assignment.Client?.FullName}?");
-        
-        if (confirmed)
+        showViewModal = false;
+        selectedAssignmentForView = null;
+    }
+
+    private void ShowRevokeConfirmation(ParkingAssignment assignment)
+    {
+        selectedAssignmentForRevoke = assignment;
+        showRevokeModal = true;
+    }
+
+    private void CancelRevoke()
+    {
+        showRevokeModal = false;
+        selectedAssignmentForRevoke = null;
+    }
+
+    private async Task ConfirmRevoke()
+    {
+        if (selectedAssignmentForRevoke != null)
         {
-            assignment.Status = "Cancelled";
-            assignment.IsActive = false;
-            assignment.ModifiedDate = DateTime.Now;
-            assignment.Notes = (assignment.Notes ?? "") + $"\nRevocado el {DateTime.Now:dd/MM/yyyy HH:mm}";
-            
-            await DbContext.SaveChangesAsync();
-            await LoadAssignments();
-            await LoadStatistics();
+            isRevoking = true;
+            try
+            {
+                selectedAssignmentForRevoke.Status = "Cancelled";
+                selectedAssignmentForRevoke.IsActive = false;
+                selectedAssignmentForRevoke.ModifiedDate = DateTime.Now;
+                selectedAssignmentForRevoke.Notes = (selectedAssignmentForRevoke.Notes ?? "") + $"\nRevocado el {DateTime.Now:dd/MM/yyyy HH:mm}";
+                
+                await DbContext.SaveChangesAsync();
+                await LoadAssignments();
+                await LoadStatistics();
+                
+                successMessage = "Asignación revocada exitosamente.";
+                showSuccessToast = true;
+                _ = Task.Delay(3000).ContinueWith(_ => InvokeAsync(() => { showSuccessToast = false; StateHasChanged(); }));
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Error al revocar la asignación: {ex.Message}";
+                showErrorToast = true;
+                _ = Task.Delay(3000).ContinueWith(_ => InvokeAsync(() => { showErrorToast = false; StateHasChanged(); }));
+            }
+            finally
+            {
+                isRevoking = false;
+                showRevokeModal = false;
+                selectedAssignmentForRevoke = null;
+            }
         }
     }
 
-    private string GetStatusColor(string status) => status switch
+    private string GetStatusColorClasses(string status) => status switch
     {
-        "Active" => "success",
-        "Expired" => "warning",
-        "Cancelled" => "danger",
-        "Suspended" => "secondary",
-        _ => "primary"
+        "Active" => "bg-green-100 text-green-800",
+        "Expired" => "bg-orange-100 text-orange-800",
+        "Cancelled" => "bg-red-100 text-red-800",
+        "Suspended" => "bg-gray-100 text-gray-800",
+        _ => "bg-blue-100 text-blue-800"
     };
 
     private string GetStatusIcon(string status) => status switch

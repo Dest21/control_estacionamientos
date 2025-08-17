@@ -7,378 +7,336 @@
 
 <PageTitle>Reportes y Estadísticas</PageTitle>
 
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h1 class="display-5 text-primary">
-                <i class="bi bi-bar-chart-fill me-3"></i>Reportes y Estadísticas
-            </h1>
-            <p class="lead text-muted">Análisis completo del sistema de estacionamientos</p>
+<!-- Header Section -->
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 font-poppins">Reportes y Estadísticas</h1>
+            <p class="text-gray-600 mt-2">Análisis completo del sistema de estacionamientos</p>
         </div>
+        <button class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center space-x-2 hover-lift" 
+                @onclick="ExportReport">
+            <i class="bi bi-download text-lg"></i>
+            <span>Exportar</span>
+        </button>
     </div>
+</div>
 
-    <!-- Métricas principales -->
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <div class="card-body text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h2 class="mb-1">@totalRevenue.ToString("C")</h2>
-                            <p class="mb-0">Ingresos Estimados</p>
-                            <small class="opacity-75">Este mes</small>
-                        </div>
-                        <div class="text-end">
-                            <i class="bi bi-currency-dollar display-4 opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
+<!-- Main Metrics -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Revenue -->
+    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover-lift">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-3xl font-bold">@totalRevenue.ToString("C")</h3>
+                <p class="text-indigo-100 font-medium">Ingresos Estimados</p>
+                <p class="text-indigo-200 text-sm">Este mes</p>
             </div>
-        </div>
-
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                <div class="card-body text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h2 class="mb-1">@occupancyRate.ToString("F1")%</h2>
-                            <p class="mb-0">Tasa de Ocupación</p>
-                            <small class="opacity-75">Promedio actual</small>
-                        </div>
-                        <div class="text-end">
-                            <i class="bi bi-pie-chart display-4 opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                <div class="card-body text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h2 class="mb-1">@avgStayDuration.ToString("F1")</h2>
-                            <p class="mb-0">Días Promedio</p>
-                            <small class="opacity-75">Duración estancia</small>
-                        </div>
-                        <div class="text-end">
-                            <i class="bi bi-clock display-4 opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-                <div class="card-body text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h2 class="mb-1">@customerSatisfaction.ToString("F1")%</h2>
-                            <p class="mb-0">Satisfacción</p>
-                            <small class="opacity-75">Clientes activos</small>
-                        </div>
-                        <div class="text-end">
-                            <i class="bi bi-emoji-smile display-4 opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
+            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                <i class="bi bi-currency-dollar text-2xl"></i>
             </div>
         </div>
     </div>
 
-    <div class="row mb-4">
-        <!-- Gráfico de ocupación por zona -->
-        <div class="col-lg-8 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-0 pb-0">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-bar-chart me-2 text-primary"></i>Ocupación por Zona
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if (zoneOccupancy?.Any() == true)
-                    {
-                        <div class="row">
-                            @foreach (var zone in zoneOccupancy)
-                            {
-                                <div class="col-md-6 mb-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="fw-semibold">@zone.Zone</span>
-                                        <span class="text-muted">@zone.OccupiedSpaces/@zone.TotalSpaces</span>
-                                    </div>
-                                    <div class="progress" style="height: 8px;">
-                                        <div class="progress-bar bg-@(GetZoneColor(zone.Zone))" 
-                                             role="progressbar" 
-                                             style="width: @(zone.TotalSpaces > 0 ? (zone.OccupiedSpaces * 100.0 / zone.TotalSpaces).ToString("F1") : "0")%">
-                                        </div>
-                                    </div>
-                                    <small class="text-muted">
-                                        @(zone.TotalSpaces > 0 ? (zone.OccupiedSpaces * 100.0 / zone.TotalSpaces).ToString("F1") : "0")% ocupado
-                                    </small>
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-4">
-                            <i class="bi bi-bar-chart display-4 text-muted"></i>
-                            <p class="text-muted mt-2">No hay datos de ocupación disponibles</p>
-                        </div>
-                    }
-                </div>
+    <!-- Occupancy Rate -->
+    <div class="bg-gradient-to-r from-pink-500 to-rose-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover-lift">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-3xl font-bold">@occupancyRate.ToString("F1")%</h3>
+                <p class="text-pink-100 font-medium">Tasa de Ocupación</p>
+                <p class="text-pink-200 text-sm">Promedio actual</p>
             </div>
-        </div>
-
-        <!-- Top clientes -->
-        <div class="col-lg-4 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-0 pb-0">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-trophy me-2 text-warning"></i>Top Clientes
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if (topClients?.Any() == true)
-                    {
-                        @foreach (var (client, index) in topClients.Select((c, i) => (c, i)))
-                        {
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="flex-shrink-0">
-                                    <div class="avatar-md bg-@(GetRankColor(index)) text-white rounded-circle d-flex align-items-center justify-content-center">
-                                        @if (index < 3)
-                                        {
-                                            <i class="bi bi-trophy"></i>
-                                        }
-                                        else
-                                        {
-                                            <span>@(index + 1)</span>
-                                        }
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <h6 class="mb-0">@client.FullName</h6>
-                                    <small class="text-muted">@client.Cars.Count vehículo(s)</small>
-                                </div>
-                                <div class="flex-shrink-0">
-                                    <span class="badge bg-primary">@client.ParkingAssignments.Count</span>
-                                </div>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <div class="text-center py-4">
-                            <i class="bi bi-people display-4 text-muted"></i>
-                            <p class="text-muted mt-2">No hay datos de clientes</p>
-                        </div>
-                    }
-                </div>
+            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                <i class="bi bi-pie-chart text-2xl"></i>
             </div>
         </div>
     </div>
 
-    <div class="row mb-4">
-        <!-- Estadísticas de vehículos -->
-        <div class="col-lg-6 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-0 pb-0">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-car-front me-2 text-success"></i>Estadísticas de Vehículos
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if (vehicleStats?.Any() == true)
-                    {
-                        <div class="row">
-                            @foreach (var stat in vehicleStats)
-                            {
-                                <div class="col-6 mb-3">
-                                    <div class="text-center">
-                                        <h4 class="text-primary mb-1">@stat.Count</h4>
-                                        <p class="text-muted mb-0">@stat.Brand</p>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-4">
-                            <i class="bi bi-car-front display-4 text-muted"></i>
-                            <p class="text-muted mt-2">No hay datos de vehículos</p>
-                        </div>
-                    }
-                </div>
+    <!-- Average Stay -->
+    <div class="bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover-lift">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-3xl font-bold">@avgStayDuration.ToString("F1")</h3>
+                <p class="text-cyan-100 font-medium">Días Promedio</p>
+                <p class="text-cyan-200 text-sm">Duración estancia</p>
             </div>
-        </div>
-
-        <!-- Actividad reciente -->
-        <div class="col-lg-6 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-0 pb-0">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-activity me-2 text-info"></i>Actividad Reciente
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if (recentActivity?.Any() == true)
-                    {
-                        <div class="timeline">
-                            @foreach (var activity in recentActivity)
-                            {
-                                <div class="timeline-item">
-                                    <div class="timeline-marker bg-@(GetActivityColor(activity.Status))"></div>
-                                    <div class="timeline-content">
-                                        <h6 class="mb-1">@activity.Client?.FullName</h6>
-                                        <p class="mb-1 text-muted">
-                                            @activity.Car?.LicensePlate - @activity.ParkingSpace?.SpaceNumber
-                                        </p>
-                                        <small class="text-muted">
-                                            @activity.AssignedDate.ToString("dd/MM/yyyy HH:mm")
-                                        </small>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-4">
-                            <i class="bi bi-activity display-4 text-muted"></i>
-                            <p class="text-muted mt-2">No hay actividad reciente</p>
-                        </div>
-                    }
-                </div>
+            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                <i class="bi bi-clock text-2xl"></i>
             </div>
         </div>
     </div>
 
-    <!-- Tabla de resumen -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-table me-2 text-primary"></i>Resumen Detallado
-                        </h5>
-                        <button class="btn btn-outline-primary btn-sm" @onclick="ExportReport">
-                            <i class="bi bi-download"></i> Exportar
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="border-0">Métrica</th>
-                                    <th class="border-0">Valor Actual</th>
-                                    <th class="border-0">Mes Anterior</th>
-                                    <th class="border-0">Cambio</th>
-                                    <th class="border-0">Tendencia</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="fw-semibold">Total de Clientes</td>
-                                    <td>@totalClients</td>
-                                    <td>@(totalClients - 2)</td>
-                                    <td>
-                                        <span class="badge bg-success">+2</span>
-                                    </td>
-                                    <td>
-                                        <i class="bi bi-arrow-up text-success"></i>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-semibold">Espacios Ocupados</td>
-                                    <td>@occupiedSpaces</td>
-                                    <td>@(occupiedSpaces - 1)</td>
-                                    <td>
-                                        <span class="badge bg-success">+1</span>
-                                    </td>
-                                    <td>
-                                        <i class="bi bi-arrow-up text-success"></i>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-semibold">Asignaciones Activas</td>
-                                    <td>@activeAssignments</td>
-                                    <td>@(activeAssignments - 1)</td>
-                                    <td>
-                                        <span class="badge bg-success">+1</span>
-                                    </td>
-                                    <td>
-                                        <i class="bi bi-arrow-up text-success"></i>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-semibold">Tasa de Ocupación</td>
-                                    <td>@occupancyRate.ToString("F1")%</td>
-                                    <td>@(occupancyRate - 2.5).ToString("F1")%</td>
-                                    <td>
-                                        <span class="badge bg-success">+2.5%</span>
-                                    </td>
-                                    <td>
-                                        <i class="bi bi-arrow-up text-success"></i>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+    <!-- Customer Satisfaction -->
+    <div class="bg-gradient-to-r from-orange-500 to-yellow-500 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover-lift">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-3xl font-bold">@customerSatisfaction.ToString("F1")%</h3>
+                <p class="text-orange-100 font-medium">Satisfacción</p>
+                <p class="text-orange-200 text-sm">Clientes activos</p>
+            </div>
+            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                <i class="bi bi-emoji-smile text-2xl"></i>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-    .avatar-md {
-        width: 40px;
-        height: 40px;
-        font-size: 16px;
-    }
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Zone Occupancy Chart -->
+    <div class="lg:col-span-2 bg-white rounded-2xl shadow-soft p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold text-gray-900 flex items-center">
+                <i class="bi bi-bar-chart text-blue-500 mr-3"></i>
+                Ocupación por Zona
+            </h3>
+        </div>
+        @if (zoneOccupancy?.Any() == true)
+        {
+            <div class="space-y-4">
+                @foreach (var zone in zoneOccupancy)
+                {
+                    <div class="p-4 bg-gray-50 rounded-xl">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="font-semibold text-gray-900">@zone.Zone</span>
+                            <span class="text-gray-600 text-sm">@zone.OccupiedSpaces/@zone.TotalSpaces espacios</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
+                            <div class="@(GetZoneColorClass(zone.Zone)) h-3 rounded-full transition-all duration-500" 
+                                 style="width: @(zone.TotalSpaces > 0 ? (zone.OccupiedSpaces * 100.0 / zone.TotalSpaces).ToString("F1") : "0")%">
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-sm text-gray-600">
+                            <span>@(zone.TotalSpaces > 0 ? (zone.OccupiedSpaces * 100.0 / zone.TotalSpaces).ToString("F1") : "0")% ocupado</span>
+                            <span>@(zone.TotalSpaces - zone.OccupiedSpaces) disponibles</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-12">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="bi bi-bar-chart text-gray-400 text-2xl"></i>
+                </div>
+                <p class="text-gray-500">No hay datos de ocupación disponibles</p>
+            </div>
+        }
+    </div>
 
-    .timeline {
-        position: relative;
-        padding-left: 30px;
-    }
+    <!-- Top Clients -->
+    <div class="bg-white rounded-2xl shadow-soft p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold text-gray-900 flex items-center">
+                <i class="bi bi-trophy text-yellow-500 mr-3"></i>
+                Top Clientes
+            </h3>
+        </div>
+        @if (topClients?.Any() == true)
+        {
+            <div class="space-y-4">
+                @foreach (var (client, index) in topClients.Select((c, i) => (c, i)))
+                {
+                    <div class="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                        <div class="flex-shrink-0 mr-4">
+                            <div class="w-10 h-10 @(GetRankColorClass(index)) rounded-full flex items-center justify-center text-white font-bold">
+                                @if (index < 3)
+                                {
+                                    <i class="bi bi-trophy text-sm"></i>
+                                }
+                                else
+                                {
+                                    <span class="text-sm">@(index + 1)</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h4 class="font-semibold text-gray-900">@client.FullName</h4>
+                            <p class="text-gray-600 text-sm">@client.Cars.Count vehículo(s)</p>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                @client.ParkingAssignments.Count
+                            </span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-12">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="bi bi-people text-gray-400 text-2xl"></i>
+                </div>
+                <p class="text-gray-500">No hay datos de clientes</p>
+            </div>
+        }
+    </div>
+</div>
 
-    .timeline-item {
-        position: relative;
-        margin-bottom: 20px;
-    }
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Vehicle Statistics -->
+    <div class="bg-white rounded-2xl shadow-soft p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold text-gray-900 flex items-center">
+                <i class="bi bi-car-front text-green-500 mr-3"></i>
+                Estadísticas de Vehículos
+            </h3>
+        </div>
+        @if (vehicleStats?.Any() == true)
+        {
+            <div class="grid grid-cols-2 gap-4">
+                @foreach (var stat in vehicleStats)
+                {
+                    <div class="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100">
+                        <div class="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center mx-auto mb-3">
+                            <i class="bi bi-car-front text-white text-xl"></i>
+                        </div>
+                        <h4 class="text-2xl font-bold text-gray-900 mb-1">@stat.Count</h4>
+                        <p class="text-gray-600 font-medium">@stat.Brand</p>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-12">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="bi bi-car-front text-gray-400 text-2xl"></i>
+                </div>
+                <p class="text-gray-500">No hay datos de vehículos</p>
+            </div>
+        }
+    </div>
 
-    .timeline-marker {
-        position: absolute;
-        left: -35px;
-        top: 5px;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-    }
+    <!-- Recent Activity -->
+    <div class="bg-white rounded-2xl shadow-soft p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold text-gray-900 flex items-center">
+                <i class="bi bi-activity text-purple-500 mr-3"></i>
+                Actividad Reciente
+            </h3>
+        </div>
+        @if (recentActivity?.Any() == true)
+        {
+            <div class="space-y-4">
+                @foreach (var activity in recentActivity)
+                {
+                    <div class="flex items-start p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                        <div class="flex-shrink-0 mr-4">
+                            <div class="w-10 h-10 @(GetActivityColorClass(activity.Status)) rounded-full flex items-center justify-center">
+                                <i class="bi bi-@(GetActivityIcon(activity.Status)) text-white text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h4 class="font-semibold text-gray-900">@activity.Client?.FullName</h4>
+                            <p class="text-gray-600 text-sm mb-1">
+                                @activity.Car?.LicensePlate - @activity.ParkingSpace?.SpaceNumber
+                            </p>
+                            <p class="text-gray-500 text-xs">
+                                @activity.AssignedDate.ToString("dd/MM/yyyy HH:mm")
+                            </p>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium @(GetStatusBadgeClass(activity.Status))">
+                                @GetStatusText(activity.Status)
+                            </span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-12">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="bi bi-activity text-gray-400 text-2xl"></i>
+                </div>
+                <p class="text-gray-500">No hay actividad reciente</p>
+            </div>
+        }
+    </div>
+</div>
 
-    .timeline-item:not(:last-child)::before {
-        content: '';
-        position: absolute;
-        left: -31px;
-        top: 15px;
-        width: 2px;
-        height: calc(100% + 5px);
-        background-color: #e9ecef;
-    }
-
-    .timeline-content {
-        background: #f8f9fa;
-        padding: 10px 15px;
-        border-radius: 8px;
-        border-left: 3px solid #007bff;
-    }
-</style>
+<!-- Summary Table -->
+<div class="bg-white rounded-2xl shadow-soft overflow-hidden">
+    <div class="p-6 border-b border-gray-100">
+        <div class="flex items-center justify-between">
+            <h3 class="text-xl font-bold text-gray-900 flex items-center">
+                <i class="bi bi-table text-indigo-500 mr-3"></i>
+                Resumen Detallado
+            </h3>
+        </div>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Métrica</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Valor Actual</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Mes Anterior</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Cambio</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Tendencia</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                <tr class="hover:bg-gray-50 transition-colors duration-200">
+                    <td class="px-6 py-4 font-semibold text-gray-900">Total de Clientes</td>
+                    <td class="px-6 py-4 text-gray-700">@totalClients</td>
+                    <td class="px-6 py-4 text-gray-500">@(totalClients - 2)</td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            +2
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <i class="bi bi-arrow-up text-green-500 text-lg"></i>
+                    </td>
+                </tr>
+                <tr class="hover:bg-gray-50 transition-colors duration-200">
+                    <td class="px-6 py-4 font-semibold text-gray-900">Espacios Ocupados</td>
+                    <td class="px-6 py-4 text-gray-700">@occupiedSpaces</td>
+                    <td class="px-6 py-4 text-gray-500">@(occupiedSpaces - 1)</td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            +1
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <i class="bi bi-arrow-up text-green-500 text-lg"></i>
+                    </td>
+                </tr>
+                <tr class="hover:bg-gray-50 transition-colors duration-200">
+                    <td class="px-6 py-4 font-semibold text-gray-900">Asignaciones Activas</td>
+                    <td class="px-6 py-4 text-gray-700">@activeAssignments</td>
+                    <td class="px-6 py-4 text-gray-500">@(activeAssignments - 1)</td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            +1
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <i class="bi bi-arrow-up text-green-500 text-lg"></i>
+                    </td>
+                </tr>
+                <tr class="hover:bg-gray-50 transition-colors duration-200">
+                    <td class="px-6 py-4 font-semibold text-gray-900">Tasa de Ocupación</td>
+                    <td class="px-6 py-4 text-gray-700">@occupancyRate.ToString("F1")%</td>
+                    <td class="px-6 py-4 text-gray-500">@((occupancyRate - 2.5).ToString("F1"))%</td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            +2.5%
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <i class="bi bi-arrow-up text-green-500 text-lg"></i>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
 
 @code {
     private decimal totalRevenue;
@@ -465,29 +423,54 @@
         // Aquí se implementaría la lógica real de exportación
     }
 
-    private string GetZoneColor(string zone) => zone switch
+    private string GetZoneColorClass(string zone) => zone switch
     {
-        "Zona A" => "primary",
-        "Zona B" => "success",
-        "Zona C" => "warning",
-        "Zona Especial" => "info",
-        _ => "secondary"
+        "Zona A" => "bg-blue-500",
+        "Zona B" => "bg-green-500",
+        "Zona C" => "bg-yellow-500",
+        "Zona Especial" => "bg-purple-500",
+        _ => "bg-gray-500"
     };
 
-    private string GetRankColor(int index) => index switch
+    private string GetRankColorClass(int index) => index switch
     {
-        0 => "warning", // Oro
-        1 => "secondary", // Plata
-        2 => "danger", // Bronce
-        _ => "primary"
+        0 => "bg-yellow-500", // Oro
+        1 => "bg-gray-400", // Plata
+        2 => "bg-orange-500", // Bronce
+        _ => "bg-blue-500"
     };
 
-    private string GetActivityColor(string status) => status switch
+    private string GetActivityColorClass(string status) => status switch
     {
-        "Active" => "success",
-        "Expired" => "warning",
-        "Cancelled" => "danger",
-        _ => "primary"
+        "Active" => "bg-green-500",
+        "Expired" => "bg-orange-500",
+        "Cancelled" => "bg-red-500",
+        _ => "bg-blue-500"
+    };
+
+    private string GetActivityIcon(string status) => status switch
+    {
+        "Active" => "check-circle",
+        "Expired" => "clock",
+        "Cancelled" => "x-circle",
+        _ => "circle"
+    };
+
+    private string GetStatusBadgeClass(string status) => status switch
+    {
+        "Active" => "bg-green-100 text-green-800",
+        "Expired" => "bg-orange-100 text-orange-800",
+        "Cancelled" => "bg-red-100 text-red-800",
+        _ => "bg-blue-100 text-blue-800"
+    };
+
+    private string GetStatusText(string status) => status switch
+    {
+        "Active" => "Activo",
+        "Expired" => "Expirado",
+        "Cancelled" => "Cancelado",
+        "Suspended" => "Suspendido",
+        _ => status
     };
 
     public class ZoneOccupancy

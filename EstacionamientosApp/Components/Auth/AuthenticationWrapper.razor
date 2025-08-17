@@ -2,41 +2,15 @@
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 
-@if (isAuthenticated)
+@if (showContent)
 {
     @ChildContent
-}
-else
-{
-    <div class="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
-        <div class="text-center">
-            <!-- Loading Spinner -->
-            <div class="relative mb-8">
-                <div class="w-20 h-20 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto"></div>
-                <div class="absolute inset-0 w-20 h-20 border-4 border-transparent border-t-indigo-400 rounded-full animate-spin mx-auto" style="animation-delay: -0.5s;"></div>
-            </div>
-            
-            <!-- Loading Text -->
-            <div class="text-white">
-                <h2 class="text-2xl font-bold mb-2 font-poppins">Verificando autenticación</h2>
-                <p class="text-white/80">Por favor espere un momento...</p>
-            </div>
-            
-            <!-- Animated Dots -->
-            <div class="flex justify-center space-x-2 mt-6">
-                <div class="w-2 h-2 bg-white/60 rounded-full animate-bounce"></div>
-                <div class="w-2 h-2 bg-white/60 rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
-                <div class="w-2 h-2 bg-white/60 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
-            </div>
-        </div>
-    </div>
 }
 
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
     
-    private bool isAuthenticated = false;
-    private bool isLoading = true;
+    private bool showContent = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -50,17 +24,20 @@ else
     {
         try
         {
+            // Pequeña pausa para asegurar que el DOM esté listo
+            await Task.Delay(50);
+            
             var authStatus = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "isAuthenticated");
             
             if (string.IsNullOrEmpty(authStatus) || authStatus != "true")
             {
-                // No está autenticado, redirigir al login
+                // No está autenticado, redirigir al login inmediatamente
                 Navigation.NavigateTo("/login", true);
                 return;
             }
 
-            isAuthenticated = true;
-            isLoading = false;
+            // Está autenticado, mostrar el contenido
+            showContent = true;
             StateHasChanged();
         }
         catch (Exception)
