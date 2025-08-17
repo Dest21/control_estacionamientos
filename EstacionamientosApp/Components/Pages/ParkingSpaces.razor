@@ -1,0 +1,501 @@
+@page "/parking-spaces"
+@using EstacionamientosApp.Data
+@using EstacionamientosApp.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>Gestión de Espacios</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 text-primary">
+                <i class="bi bi-grid-3x3-gap-fill me-3"></i>Gestión de Espacios
+            </h1>
+            <p class="lead text-muted">Administra los espacios de estacionamiento del sistema</p>
+        </div>
+    </div>
+
+    <!-- Filtros y estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">@totalSpaces</h3>
+                            <small>Total Espacios</small>
+                        </div>
+                        <i class="bi bi-grid-3x3-gap fs-1 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">@availableSpaces</h3>
+                            <small>Disponibles</small>
+                        </div>
+                        <i class="bi bi-check-circle fs-1 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">@occupiedSpaces</h3>
+                            <small>Ocupados</small>
+                        </div>
+                        <i class="bi bi-car-front fs-1 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">@zones?.Count</h3>
+                            <small>Zonas</small>
+                        </div>
+                        <i class="bi bi-geo-alt fs-1 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Buscar</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" placeholder="Número de espacio..." 
+                               @bind="searchTerm" @onkeypress="OnSearchKeyPress" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Zona</label>
+                    <select class="form-select" @bind="selectedZone" @bind:after="FilterSpaces">
+                        <option value="">Todas las zonas</option>
+                        @if (zones?.Any() == true)
+                        {
+                            @foreach (var zone in zones)
+                            {
+                                <option value="@zone">@zone</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Tipo</label>
+                    <select class="form-select" @bind="selectedType" @bind:after="FilterSpaces">
+                        <option value="">Todos los tipos</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Compact">Compacto</option>
+                        <option value="VIP">VIP</option>
+                        <option value="Disabled">Discapacitados</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Estado</label>
+                    <select class="form-select" @bind="selectedAvailability" @bind:after="FilterSpaces">
+                        <option value="">Todos</option>
+                        <option value="true">Disponibles</option>
+                        <option value="false">Ocupados</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12 text-end">
+                    <button class="btn btn-outline-secondary me-2" @onclick="ClearFilters">
+                        <i class="bi bi-arrow-clockwise"></i> Limpiar
+                    </button>
+                    <button class="btn btn-primary" @onclick="ShowCreateModal">
+                        <i class="bi bi-plus-circle"></i> Nuevo Espacio
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2 text-muted">Cargando espacios...</p>
+        </div>
+    }
+    else if (parkingSpaces?.Any() == true)
+    {
+        <!-- Vista de tarjetas para espacios -->
+        <div class="row">
+            @foreach (var space in parkingSpaces)
+            {
+                <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="card border-0 shadow-sm h-100 @(space.IsAvailable ? "border-success" : "border-warning")">
+                        <div class="card-header bg-@(space.IsAvailable ? "success" : "warning") text-white text-center py-2">
+                            <h5 class="mb-0">
+                                <i class="bi bi-@(GetSpaceIcon(space.SpaceType)) me-2"></i>@space.SpaceNumber
+                            </h5>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="mb-2">
+                                <small class="text-muted">Zona:</small>
+                                <div class="fw-semibold">@space.Zone</div>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">Tipo:</small>
+                                <span class="badge bg-@(GetTypeColor(space.SpaceType)) ms-1">@space.SpaceType</span>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted">Estado:</small>
+                                <div>
+                                    <span class="badge bg-@(space.IsAvailable ? "success" : "warning")">
+                                        <i class="bi bi-@(space.IsAvailable ? "check-circle" : "car-front")"></i>
+                                        @(space.IsAvailable ? "Disponible" : "Ocupado")
+                                    </span>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(space.Description))
+                            {
+                                <div class="mb-2">
+                                    <small class="text-muted">@space.Description</small>
+                                </div>
+                            }
+                        </div>
+                        <div class="card-footer bg-transparent border-0 p-2">
+                            <div class="btn-group w-100" role="group">
+                                <button class="btn btn-outline-primary btn-sm" @onclick="() => ShowEditModal(space)">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-outline-info btn-sm" @onclick="() => ViewSpace(space)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                @if (space.IsActive && space.IsAvailable)
+                                {
+                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => DeactivateSpace(space)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-grid-3x3-gap display-1 text-muted"></i>
+            <h4 class="mt-3 text-muted">No se encontraron espacios</h4>
+            <p class="text-muted">Intenta ajustar los filtros o crear un nuevo espacio</p>
+        </div>
+    }
+</div>
+
+<!-- Modal para crear/editar -->
+@if (showModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-@(isEditing ? "pencil" : "plus-circle") me-2"></i>
+                        @(isEditing ? "Editar Espacio" : "Nuevo Espacio")
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="currentSpace" OnValidSubmit="SaveSpace">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="alert alert-danger" />
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Número de Espacio</label>
+                                    <InputText class="form-control" @bind-Value="currentSpace.SpaceNumber" 
+                                               placeholder="Ej: A01, B15, C03" />
+                                    <ValidationMessage For="@(() => currentSpace.SpaceNumber)" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Zona</label>
+                                    <InputText class="form-control" @bind-Value="currentSpace.Zone" 
+                                               placeholder="Ej: Zona A, Zona B" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Tipo de Espacio</label>
+                                    <InputSelect class="form-select" @bind-Value="currentSpace.SpaceType">
+                                        <option value="Regular">Regular</option>
+                                        <option value="Compact">Compacto</option>
+                                        <option value="VIP">VIP</option>
+                                        <option value="Disabled">Discapacitados</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Estado</label>
+                                    <div class="form-check form-switch mt-2">
+                                        <InputCheckbox class="form-check-input" @bind-Value="currentSpace.IsAvailable" />
+                                        <label class="form-check-label">Disponible</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Descripción</label>
+                            <InputTextArea class="form-control" rows="3" @bind-Value="currentSpace.Description" 
+                                           placeholder="Descripción opcional del espacio..." />
+                        </div>
+
+                        <div class="modal-footer border-0 px-0">
+                            <button type="button" class="btn btn-outline-secondary" @onclick="CloseModal">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                }
+                                <i class="bi bi-@(isEditing ? "check-circle" : "plus-circle")"></i>
+                                @(isEditing ? "Actualizar" : "Crear")
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ParkingSpace>? parkingSpaces;
+    private List<string>? zones;
+    private ParkingSpace currentSpace = new();
+    private string searchTerm = "";
+    private string selectedZone = "";
+    private string selectedType = "";
+    private string selectedAvailability = "";
+    private bool showModal = false;
+    private bool isEditing = false;
+    private bool isLoading = true;
+    private bool isSaving = false;
+
+    private int totalSpaces;
+    private int availableSpaces;
+    private int occupiedSpaces;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadZones();
+        await LoadSpaces();
+        await LoadStatistics();
+    }
+
+    private async Task LoadZones()
+    {
+        zones = await DbContext.ParkingSpaces
+            .Where(ps => ps.IsActive && !string.IsNullOrEmpty(ps.Zone))
+            .Select(ps => ps.Zone!)
+            .Distinct()
+            .OrderBy(z => z)
+            .ToListAsync();
+    }
+
+    private async Task LoadStatistics()
+    {
+        totalSpaces = await DbContext.ParkingSpaces.CountAsync(ps => ps.IsActive);
+        availableSpaces = await DbContext.ParkingSpaces.CountAsync(ps => ps.IsActive && ps.IsAvailable);
+        occupiedSpaces = totalSpaces - availableSpaces;
+    }
+
+    private async Task LoadSpaces()
+    {
+        isLoading = true;
+        try
+        {
+            var query = DbContext.ParkingSpaces.Where(ps => ps.IsActive).AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                query = query.Where(ps => ps.SpaceNumber.Contains(searchTerm) ||
+                                         ps.Zone!.Contains(searchTerm) ||
+                                         ps.Description!.Contains(searchTerm));
+            }
+
+            if (!string.IsNullOrEmpty(selectedZone))
+            {
+                query = query.Where(ps => ps.Zone == selectedZone);
+            }
+
+            if (!string.IsNullOrEmpty(selectedType))
+            {
+                query = query.Where(ps => ps.SpaceType == selectedType);
+            }
+
+            if (!string.IsNullOrEmpty(selectedAvailability))
+            {
+                var isAvailable = bool.Parse(selectedAvailability);
+                query = query.Where(ps => ps.IsAvailable == isAvailable);
+            }
+
+            parkingSpaces = await query
+                .OrderBy(ps => ps.Zone)
+                .ThenBy(ps => ps.SpaceNumber)
+                .ToListAsync();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task FilterSpaces()
+    {
+        await LoadSpaces();
+    }
+
+    private async Task OnSearchKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await LoadSpaces();
+        }
+    }
+
+    private async Task ClearFilters()
+    {
+        searchTerm = "";
+        selectedZone = "";
+        selectedType = "";
+        selectedAvailability = "";
+        await LoadSpaces();
+    }
+
+    private void ShowCreateModal()
+    {
+        currentSpace = new ParkingSpace { IsAvailable = true, IsActive = true };
+        isEditing = false;
+        showModal = true;
+    }
+
+    private void ShowEditModal(ParkingSpace space)
+    {
+        currentSpace = new ParkingSpace
+        {
+            Id = space.Id,
+            SpaceNumber = space.SpaceNumber,
+            Zone = space.Zone,
+            SpaceType = space.SpaceType,
+            IsAvailable = space.IsAvailable,
+            IsActive = space.IsActive,
+            Description = space.Description
+        };
+        isEditing = true;
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        currentSpace = new();
+    }
+
+    private async Task SaveSpace()
+    {
+        isSaving = true;
+        try
+        {
+            if (isEditing)
+            {
+                var existingSpace = await DbContext.ParkingSpaces.FindAsync(currentSpace.Id);
+                if (existingSpace != null)
+                {
+                    existingSpace.SpaceNumber = currentSpace.SpaceNumber;
+                    existingSpace.Zone = currentSpace.Zone;
+                    existingSpace.SpaceType = currentSpace.SpaceType;
+                    existingSpace.IsAvailable = currentSpace.IsAvailable;
+                    existingSpace.Description = currentSpace.Description;
+                }
+            }
+            else
+            {
+                DbContext.ParkingSpaces.Add(currentSpace);
+            }
+
+            await DbContext.SaveChangesAsync();
+            CloseModal();
+            await LoadSpaces();
+            await LoadStatistics();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error al guardar: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task ViewSpace(ParkingSpace space)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", $"Espacio: {space.DisplayName}\nTipo: {space.SpaceType}\nEstado: {(space.IsAvailable ? "Disponible" : "Ocupado")}");
+    }
+
+    private async Task DeactivateSpace(ParkingSpace space)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"¿Está seguro de desactivar el espacio {space.SpaceNumber}?");
+        
+        if (confirmed)
+        {
+            space.IsActive = false;
+            await DbContext.SaveChangesAsync();
+            await LoadSpaces();
+            await LoadStatistics();
+        }
+    }
+
+    private string GetSpaceIcon(string spaceType) => spaceType switch
+    {
+        "VIP" => "star-fill",
+        "Disabled" => "person-wheelchair",
+        "Compact" => "car-front",
+        _ => "square"
+    };
+
+    private string GetTypeColor(string spaceType) => spaceType switch
+    {
+        "VIP" => "warning",
+        "Disabled" => "info",
+        "Compact" => "secondary",
+        _ => "primary"
+    };
+}

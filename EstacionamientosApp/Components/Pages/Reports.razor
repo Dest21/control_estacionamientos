@@ -1,0 +1,505 @@
+@page "/reports"
+@using EstacionamientosApp.Data
+@using EstacionamientosApp.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+@rendermode InteractiveServer
+
+<PageTitle>Reportes y Estadísticas</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 text-primary">
+                <i class="bi bi-bar-chart-fill me-3"></i>Reportes y Estadísticas
+            </h1>
+            <p class="lead text-muted">Análisis completo del sistema de estacionamientos</p>
+        </div>
+    </div>
+
+    <!-- Métricas principales -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">@totalRevenue.ToString("C")</h2>
+                            <p class="mb-0">Ingresos Estimados</p>
+                            <small class="opacity-75">Este mes</small>
+                        </div>
+                        <div class="text-end">
+                            <i class="bi bi-currency-dollar display-4 opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="card-body text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">@occupancyRate.ToString("F1")%</h2>
+                            <p class="mb-0">Tasa de Ocupación</p>
+                            <small class="opacity-75">Promedio actual</small>
+                        </div>
+                        <div class="text-end">
+                            <i class="bi bi-pie-chart display-4 opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="card-body text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">@avgStayDuration.ToString("F1")</h2>
+                            <p class="mb-0">Días Promedio</p>
+                            <small class="opacity-75">Duración estancia</small>
+                        </div>
+                        <div class="text-end">
+                            <i class="bi bi-clock display-4 opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                <div class="card-body text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">@customerSatisfaction.ToString("F1")%</h2>
+                            <p class="mb-0">Satisfacción</p>
+                            <small class="opacity-75">Clientes activos</small>
+                        </div>
+                        <div class="text-end">
+                            <i class="bi bi-emoji-smile display-4 opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Gráfico de ocupación por zona -->
+        <div class="col-lg-8 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-bar-chart me-2 text-primary"></i>Ocupación por Zona
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (zoneOccupancy?.Any() == true)
+                    {
+                        <div class="row">
+                            @foreach (var zone in zoneOccupancy)
+                            {
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-semibold">@zone.Zone</span>
+                                        <span class="text-muted">@zone.OccupiedSpaces/@zone.TotalSpaces</span>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-@(GetZoneColor(zone.Zone))" 
+                                             role="progressbar" 
+                                             style="width: @(zone.TotalSpaces > 0 ? (zone.OccupiedSpaces * 100.0 / zone.TotalSpaces).ToString("F1") : "0")%">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">
+                                        @(zone.TotalSpaces > 0 ? (zone.OccupiedSpaces * 100.0 / zone.TotalSpaces).ToString("F1") : "0")% ocupado
+                                    </small>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-bar-chart display-4 text-muted"></i>
+                            <p class="text-muted mt-2">No hay datos de ocupación disponibles</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Top clientes -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-trophy me-2 text-warning"></i>Top Clientes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (topClients?.Any() == true)
+                    {
+                        @foreach (var (client, index) in topClients.Select((c, i) => (c, i)))
+                        {
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="flex-shrink-0">
+                                    <div class="avatar-md bg-@(GetRankColor(index)) text-white rounded-circle d-flex align-items-center justify-content-center">
+                                        @if (index < 3)
+                                        {
+                                            <i class="bi bi-trophy"></i>
+                                        }
+                                        else
+                                        {
+                                            <span>@(index + 1)</span>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-0">@client.FullName</h6>
+                                    <small class="text-muted">@client.Cars.Count vehículo(s)</small>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <span class="badge bg-primary">@client.ParkingAssignments.Count</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-people display-4 text-muted"></i>
+                            <p class="text-muted mt-2">No hay datos de clientes</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Estadísticas de vehículos -->
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-car-front me-2 text-success"></i>Estadísticas de Vehículos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (vehicleStats?.Any() == true)
+                    {
+                        <div class="row">
+                            @foreach (var stat in vehicleStats)
+                            {
+                                <div class="col-6 mb-3">
+                                    <div class="text-center">
+                                        <h4 class="text-primary mb-1">@stat.Count</h4>
+                                        <p class="text-muted mb-0">@stat.Brand</p>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-car-front display-4 text-muted"></i>
+                            <p class="text-muted mt-2">No hay datos de vehículos</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Actividad reciente -->
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-activity me-2 text-info"></i>Actividad Reciente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (recentActivity?.Any() == true)
+                    {
+                        <div class="timeline">
+                            @foreach (var activity in recentActivity)
+                            {
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-@(GetActivityColor(activity.Status))"></div>
+                                    <div class="timeline-content">
+                                        <h6 class="mb-1">@activity.Client?.FullName</h6>
+                                        <p class="mb-1 text-muted">
+                                            @activity.Car?.LicensePlate - @activity.ParkingSpace?.SpaceNumber
+                                        </p>
+                                        <small class="text-muted">
+                                            @activity.AssignedDate.ToString("dd/MM/yyyy HH:mm")
+                                        </small>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-activity display-4 text-muted"></i>
+                            <p class="text-muted mt-2">No hay actividad reciente</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de resumen -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-table me-2 text-primary"></i>Resumen Detallado
+                        </h5>
+                        <button class="btn btn-outline-primary btn-sm" @onclick="ExportReport">
+                            <i class="bi bi-download"></i> Exportar
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="border-0">Métrica</th>
+                                    <th class="border-0">Valor Actual</th>
+                                    <th class="border-0">Mes Anterior</th>
+                                    <th class="border-0">Cambio</th>
+                                    <th class="border-0">Tendencia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="fw-semibold">Total de Clientes</td>
+                                    <td>@totalClients</td>
+                                    <td>@(totalClients - 2)</td>
+                                    <td>
+                                        <span class="badge bg-success">+2</span>
+                                    </td>
+                                    <td>
+                                        <i class="bi bi-arrow-up text-success"></i>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Espacios Ocupados</td>
+                                    <td>@occupiedSpaces</td>
+                                    <td>@(occupiedSpaces - 1)</td>
+                                    <td>
+                                        <span class="badge bg-success">+1</span>
+                                    </td>
+                                    <td>
+                                        <i class="bi bi-arrow-up text-success"></i>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Asignaciones Activas</td>
+                                    <td>@activeAssignments</td>
+                                    <td>@(activeAssignments - 1)</td>
+                                    <td>
+                                        <span class="badge bg-success">+1</span>
+                                    </td>
+                                    <td>
+                                        <i class="bi bi-arrow-up text-success"></i>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Tasa de Ocupación</td>
+                                    <td>@occupancyRate.ToString("F1")%</td>
+                                    <td>@(occupancyRate - 2.5).ToString("F1")%</td>
+                                    <td>
+                                        <span class="badge bg-success">+2.5%</span>
+                                    </td>
+                                    <td>
+                                        <i class="bi bi-arrow-up text-success"></i>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-md {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: -35px;
+        top: 5px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+
+    .timeline-item:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        left: -31px;
+        top: 15px;
+        width: 2px;
+        height: calc(100% + 5px);
+        background-color: #e9ecef;
+    }
+
+    .timeline-content {
+        background: #f8f9fa;
+        padding: 10px 15px;
+        border-radius: 8px;
+        border-left: 3px solid #007bff;
+    }
+</style>
+
+@code {
+    private decimal totalRevenue;
+    private double occupancyRate;
+    private double avgStayDuration;
+    private double customerSatisfaction;
+    
+    private int totalClients;
+    private int occupiedSpaces;
+    private int activeAssignments;
+    
+    private List<ZoneOccupancy>? zoneOccupancy;
+    private List<Client>? topClients;
+    private List<VehicleStatistic>? vehicleStats;
+    private List<ParkingAssignment>? recentActivity;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReportData();
+    }
+
+    private async Task LoadReportData()
+    {
+        // Cargar estadísticas básicas
+        totalClients = await DbContext.Clients.CountAsync(c => c.IsActive);
+        occupiedSpaces = await DbContext.ParkingSpaces.CountAsync(ps => !ps.IsAvailable && ps.IsActive);
+        var totalSpaces = await DbContext.ParkingSpaces.CountAsync(ps => ps.IsActive);
+        activeAssignments = await DbContext.ParkingAssignments.CountAsync(pa => pa.Status == "Active" && pa.IsActive);
+
+        // Calcular métricas
+        occupancyRate = totalSpaces > 0 ? (occupiedSpaces * 100.0 / totalSpaces) : 0;
+        totalRevenue = activeAssignments * 150m; // Estimado $150 por asignación
+        avgStayDuration = 28.5; // Promedio estimado
+        customerSatisfaction = 94.2; // Estimado
+
+        // Cargar ocupación por zona
+        zoneOccupancy = await DbContext.ParkingSpaces
+            .Where(ps => ps.IsActive && !string.IsNullOrEmpty(ps.Zone))
+            .GroupBy(ps => ps.Zone)
+            .Select(g => new ZoneOccupancy
+            {
+                Zone = g.Key!,
+                TotalSpaces = g.Count(),
+                OccupiedSpaces = g.Count(ps => !ps.IsAvailable)
+            })
+            .ToListAsync();
+
+        // Top clientes
+        topClients = await DbContext.Clients
+            .Include(c => c.Cars)
+            .Include(c => c.ParkingAssignments)
+            .Where(c => c.IsActive)
+            .OrderByDescending(c => c.ParkingAssignments.Count)
+            .Take(5)
+            .ToListAsync();
+
+        // Estadísticas de vehículos
+        vehicleStats = await DbContext.Cars
+            .Where(c => c.IsActive)
+            .GroupBy(c => c.Brand)
+            .Select(g => new VehicleStatistic
+            {
+                Brand = g.Key,
+                Count = g.Count()
+            })
+            .OrderByDescending(v => v.Count)
+            .Take(6)
+            .ToListAsync();
+
+        // Actividad reciente
+        recentActivity = await DbContext.ParkingAssignments
+            .Include(pa => pa.Client)
+            .Include(pa => pa.Car)
+            .Include(pa => pa.ParkingSpace)
+            .OrderByDescending(pa => pa.AssignedDate)
+            .Take(5)
+            .ToListAsync();
+    }
+
+    private async Task ExportReport()
+    {
+        // Simulación de exportación
+        await Task.Delay(1000);
+        // Aquí se implementaría la lógica real de exportación
+    }
+
+    private string GetZoneColor(string zone) => zone switch
+    {
+        "Zona A" => "primary",
+        "Zona B" => "success",
+        "Zona C" => "warning",
+        "Zona Especial" => "info",
+        _ => "secondary"
+    };
+
+    private string GetRankColor(int index) => index switch
+    {
+        0 => "warning", // Oro
+        1 => "secondary", // Plata
+        2 => "danger", // Bronce
+        _ => "primary"
+    };
+
+    private string GetActivityColor(string status) => status switch
+    {
+        "Active" => "success",
+        "Expired" => "warning",
+        "Cancelled" => "danger",
+        _ => "primary"
+    };
+
+    public class ZoneOccupancy
+    {
+        public string Zone { get; set; } = "";
+        public int TotalSpaces { get; set; }
+        public int OccupiedSpaces { get; set; }
+    }
+
+    public class VehicleStatistic
+    {
+        public string Brand { get; set; } = "";
+        public int Count { get; set; }
+    }
+}

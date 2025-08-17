@@ -1,0 +1,283 @@
+@page "/login"
+@using EstacionamientosApp.Services
+@using EstacionamientosApp.Models
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>Iniciar Sesión - Sistema de Estacionamientos</PageTitle>
+
+<div class="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4 relative overflow-hidden">
+    <!-- Animated background elements -->
+    <div class="absolute inset-0 overflow-hidden">
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float"></div>
+        <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float" style="animation-delay: 2s;"></div>
+        <div class="absolute top-40 left-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float" style="animation-delay: 4s;"></div>
+    </div>
+
+    <div class="relative z-10 w-full max-w-6xl mx-auto">
+        <div class="grid lg:grid-cols-2 gap-8 items-center">
+            <!-- Login Form -->
+            <div class="order-2 lg:order-1" data-aos="fade-right">
+                <div class="bg-white/10 backdrop-blur-lg rounded-3xl p-8 lg:p-12 shadow-2xl border border-white/20">
+                    <!-- Logo and Header -->
+                    <div class="text-center mb-8">
+                        <div class="flex items-center justify-center mb-6">
+                            <div class="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                                <i class="bi bi-car-front-fill text-white text-2xl"></i>
+                            </div>
+                        </div>
+                        <h1 class="text-3xl lg:text-4xl font-bold text-white mb-2 font-poppins">
+                            Estacionamientos
+                        </h1>
+                        <p class="text-white/80 text-lg">Sistema de Gestión Inteligente</p>
+                    </div>
+
+                    <!-- Alert Messages -->
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-xl text-red-100 animate-fade-in-up">
+                            <div class="flex items-center">
+                                <i class="bi bi-exclamation-triangle-fill text-xl mr-3"></i>
+                                <span>@errorMessage</span>
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(successMessage))
+                    {
+                        <div class="mb-6 p-4 bg-green-500/20 border border-green-500/30 rounded-xl text-green-100 animate-fade-in-up">
+                            <div class="flex items-center">
+                                <i class="bi bi-check-circle-fill text-xl mr-3"></i>
+                                <span>@successMessage</span>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Login Form -->
+                    <EditForm Model="loginModel" OnValidSubmit="HandleLogin" class="space-y-6">
+                        <DataAnnotationsValidator />
+
+                        <div class="space-y-2">
+                            <label for="username" class="block text-white font-semibold text-sm">
+                                <i class="bi bi-person mr-2"></i>Usuario
+                            </label>
+                            <InputText @bind-Value="loginModel.Username" 
+                                       class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm" 
+                                       id="username" 
+                                       placeholder="Ingrese su usuario"
+                                       disabled="@isLoading" />
+                            <ValidationMessage For="@(() => loginModel.Username)" class="text-red-300 text-sm" />
+                        </div>
+
+                        <div class="space-y-2">
+                            <label for="password" class="block text-white font-semibold text-sm">
+                                <i class="bi bi-lock mr-2"></i>Contraseña
+                            </label>
+                            <div class="relative">
+                                <InputText @bind-Value="loginModel.Password" 
+                                           type="@(showPassword ? "text" : "password")"
+                                           class="w-full px-4 py-3 pr-12 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm" 
+                                           id="password" 
+                                           placeholder="Ingrese su contraseña"
+                                           disabled="@isLoading" />
+                                <button type="button" 
+                                        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white transition-colors duration-200" 
+                                        @onclick="TogglePasswordVisibility"
+                                        disabled="@isLoading">
+                                    <i class="bi bi-@(showPassword ? "eye-slash" : "eye")"></i>
+                                </button>
+                            </div>
+                            <ValidationMessage For="@(() => loginModel.Password)" class="text-red-300 text-sm" />
+                        </div>
+
+                        <div class="flex items-center">
+                            <InputCheckbox @bind-Value="loginModel.RememberMe" 
+                                           class="w-4 h-4 text-indigo-600 bg-white/10 border-white/20 rounded focus:ring-indigo-500 focus:ring-2" 
+                                           id="rememberMe"
+                                           disabled="@isLoading" />
+                            <label class="ml-3 text-white/80 text-sm" for="rememberMe">
+                                Recordar sesión
+                            </label>
+                        </div>
+
+                        <button type="submit" 
+                                class="w-full py-4 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ripple"
+                                disabled="@isLoading">
+                            @if (isLoading)
+                            {
+                                <div class="flex items-center justify-center">
+                                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>Iniciando sesión...</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="flex items-center justify-center">
+                                    <i class="bi bi-box-arrow-in-right mr-2"></i>
+                                    <span>Iniciar Sesión</span>
+                                </div>
+                            }
+                        </button>
+                    </EditForm>
+
+                    <!-- Demo Credentials -->
+                    <div class="mt-8 p-6 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm">
+                        <h6 class="text-white font-semibold mb-4 flex items-center">
+                            <i class="bi bi-info-circle mr-2 text-indigo-400"></i>
+                            Credenciales de Demo
+                        </h6>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div class="bg-white/5 p-3 rounded-lg">
+                                <div class="text-white/60 mb-1">Usuario:</div>
+                                <div class="text-white font-mono font-semibold">admin</div>
+                            </div>
+                            <div class="bg-white/5 p-3 rounded-lg">
+                                <div class="text-white/60 mb-1">Contraseña:</div>
+                                <div class="text-white font-mono font-semibold">admin123</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Section -->
+            <div class="order-1 lg:order-2 text-center lg:text-left" data-aos="fade-left" data-aos-delay="200">
+                <div class="mb-8">
+                    <h2 class="text-4xl lg:text-6xl font-bold text-white mb-6 font-poppins leading-tight">
+                        Gestión
+                        <span class="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                            Moderna
+                        </span>
+                        <br />de Estacionamientos
+                    </h2>
+                    <p class="text-xl text-white/80 mb-8 leading-relaxed">
+                        Controla y administra tu estacionamiento con tecnología de vanguardia
+                    </p>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="flex items-center justify-center lg:justify-start group">
+                        <div class="w-12 h-12 bg-gradient-to-r from-green-400 to-blue-500 rounded-xl flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="bi bi-check-circle-fill text-white text-xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <div class="text-white font-semibold text-lg">Control Total</div>
+                            <div class="text-white/70">Gestión completa de espacios y asignaciones</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-center lg:justify-start group">
+                        <div class="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-500 rounded-xl flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="bi bi-people-fill text-white text-xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <div class="text-white font-semibold text-lg">Gestión de Clientes</div>
+                            <div class="text-white/70">Administra clientes y vehículos fácilmente</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-center lg:justify-start group">
+                        <div class="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="bi bi-graph-up text-white text-xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <div class="text-white font-semibold text-lg">Reportes Avanzados</div>
+                            <div class="text-white/70">Estadísticas y análisis en tiempo real</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-center lg:justify-start group">
+                        <div class="w-12 h-12 bg-gradient-to-r from-indigo-400 to-cyan-500 rounded-xl flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="bi bi-phone text-white text-xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <div class="text-white font-semibold text-lg">Diseño Responsive</div>
+                            <div class="text-white/70">Funciona perfectamente en cualquier dispositivo</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginModel loginModel = new();
+    private bool isLoading = false;
+    private bool showPassword = false;
+    private string errorMessage = "";
+    private string successMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Verificar si ya está autenticado
+        var isAuthenticated = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "isAuthenticated");
+        if (!string.IsNullOrEmpty(isAuthenticated) && isAuthenticated == "true")
+        {
+            Navigation.NavigateTo("/", true);
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        errorMessage = "";
+        successMessage = "";
+        isLoading = true;
+
+        try
+        {
+            var user = await AuthService.AuthenticateAsync(loginModel.Username, loginModel.Password);
+            
+            if (user != null)
+            {
+                // Guardar información de sesión
+                await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "isAuthenticated", "true");
+                await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "userId", user.Id.ToString());
+                await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "username", user.Username);
+                await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "fullName", user.FullName);
+                await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "userRole", user.Role);
+
+                successMessage = "¡Inicio de sesión exitoso! Redirigiendo...";
+                
+                // Pequeña pausa para mostrar el mensaje de éxito
+                await Task.Delay(1500);
+                
+                Navigation.NavigateTo("/", true);
+            }
+            else
+            {
+                errorMessage = "Usuario o contraseña incorrectos. Verifique sus credenciales.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error al iniciar sesión. Por favor, intente nuevamente.";
+            Console.WriteLine($"Login error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+    }
+
+    public class LoginModel
+    {
+        [Required(ErrorMessage = "El usuario es requerido")]
+        public string Username { get; set; } = "";
+
+        [Required(ErrorMessage = "La contraseña es requerida")]
+        public string Password { get; set; } = "";
+
+        public bool RememberMe { get; set; } = false;
+    }
+}

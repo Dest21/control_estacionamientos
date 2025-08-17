@@ -1,0 +1,680 @@
+@page "/assignments"
+@using EstacionamientosApp.Data
+@using EstacionamientosApp.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>Gestión de Asignaciones</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 text-primary">
+                <i class="bi bi-clipboard-check-fill me-3"></i>Gestión de Asignaciones
+            </h1>
+            <p class="lead text-muted">Administra las asignaciones de espacios de estacionamiento</p>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">@totalAssignments</h3>
+                            <small>Total Asignaciones</small>
+                        </div>
+                        <i class="bi bi-clipboard-data fs-1 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-gradient" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="card-body text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">@activeAssignments</h3>
+                            <small>Activas</small>
+                        </div>
+                        <i class="bi bi-check-circle fs-1 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-gradient" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="card-body text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">@expiredAssignments</h3>
+                            <small>Expiradas</small>
+                        </div>
+                        <i class="bi bi-clock-history fs-1 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-gradient" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                <div class="card-body text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">@cancelledAssignments</h3>
+                            <small>Canceladas</small>
+                        </div>
+                        <i class="bi bi-x-circle fs-1 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Buscar</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" placeholder="Cliente, auto o espacio..." 
+                               @bind="searchTerm" @onkeypress="OnSearchKeyPress" />
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Cliente</label>
+                    <select class="form-select" @bind="selectedClientId" @bind:after="FilterAssignments">
+                        <option value="">Todos los clientes</option>
+                        @if (allClients?.Any() == true)
+                        {
+                            @foreach (var client in allClients)
+                            {
+                                <option value="@client.Id">@client.FullName</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Estado</label>
+                    <select class="form-select" @bind="selectedStatus" @bind:after="FilterAssignments">
+                        <option value="">Todos</option>
+                        <option value="Active">Activo</option>
+                        <option value="Expired">Expirado</option>
+                        <option value="Cancelled">Cancelado</option>
+                        <option value="Suspended">Suspendido</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Fecha Desde</label>
+                    <input type="date" class="form-control" @bind="startDate" @bind:after="FilterAssignments" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Fecha Hasta</label>
+                    <input type="date" class="form-control" @bind="endDate" @bind:after="FilterAssignments" />
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid">
+                        <button class="btn btn-outline-secondary" @onclick="ClearFilters" title="Limpiar filtros">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12 text-end">
+                    <button class="btn btn-primary" @onclick="ShowCreateModal">
+                        <i class="bi bi-plus-circle"></i> Nueva Asignación
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2 text-muted">Cargando asignaciones...</p>
+        </div>
+    }
+    else if (assignments?.Any() == true)
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="border-0">Cliente</th>
+                                <th class="border-0">Vehículo</th>
+                                <th class="border-0">Espacio</th>
+                                <th class="border-0">Fecha Asignación</th>
+                                <th class="border-0">Vigencia</th>
+                                <th class="border-0">Estado</th>
+                                <th class="border-0 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var assignment in assignments)
+                            {
+                                <tr class="@(assignment.IsCurrentlyActive ? "" : "table-light")">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                <i class="bi bi-person"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">@assignment.Client?.FullName</div>
+                                                <small class="text-muted">@assignment.Client?.Email</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                <i class="bi bi-car-front"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">@assignment.Car?.LicensePlate</div>
+                                                <small class="text-muted">@assignment.Car?.Brand @assignment.Car?.Model</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-warning text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                <i class="bi bi-geo-alt"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">@assignment.ParkingSpace?.SpaceNumber</div>
+                                                <small class="text-muted">@assignment.ParkingSpace?.Zone</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">@assignment.AssignedDate.ToString("dd/MM/yyyy")</div>
+                                        <small class="text-muted">@assignment.AssignedDate.ToString("HH:mm")</small>
+                                    </td>
+                                    <td>
+                                        @if (assignment.StartDate.HasValue && assignment.EndDate.HasValue)
+                                        {
+                                            <div class="fw-semibold">@assignment.StartDate.Value.ToString("dd/MM/yyyy")</div>
+                                            <small class="text-muted">hasta @assignment.EndDate.Value.ToString("dd/MM/yyyy")</small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Sin límite</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-@(GetStatusColor(assignment.Status)) fs-6">
+                                            <i class="bi bi-@(GetStatusIcon(assignment.Status)) me-1"></i>
+                                            @GetStatusText(assignment.Status)
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-outline-primary btn-sm" @onclick="() => ShowEditModal(assignment)" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-outline-info btn-sm" @onclick="() => ViewAssignment(assignment)" title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            @if (assignment.Status == "Active")
+                                            {
+                                                <button class="btn btn-outline-warning btn-sm" @onclick="() => RevokeAssignment(assignment)" title="Revocar">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-clipboard-x display-1 text-muted"></i>
+            <h4 class="mt-3 text-muted">No se encontraron asignaciones</h4>
+            <p class="text-muted">Intenta ajustar los filtros o crear una nueva asignación</p>
+        </div>
+    }
+</div>
+
+<!-- Modal para crear/editar -->
+@if (showModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-@(isEditing ? "pencil" : "plus-circle") me-2"></i>
+                        @(isEditing ? "Editar Asignación" : "Nueva Asignación")
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="currentAssignment" OnValidSubmit="SaveAssignment">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="alert alert-danger" />
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Cliente</label>
+                                    <InputSelect class="form-select" @bind-Value="currentAssignment.ClientId" @bind:after="OnClientChanged">
+                                        <option value="">Seleccionar cliente...</option>
+                                        @if (allClients?.Any() == true)
+                                        {
+                                            @foreach (var client in allClients.Where(c => c.IsActive))
+                                            {
+                                                <option value="@client.Id">@client.FullName</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => currentAssignment.ClientId)" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Vehículo</label>
+                                    <InputSelect class="form-select" @bind-Value="currentAssignment.CarId">
+                                        <option value="">Seleccionar vehículo...</option>
+                                        @if (clientCars?.Any() == true)
+                                        {
+                                            @foreach (var car in clientCars)
+                                            {
+                                                <option value="@car.Id">@car.DisplayName</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => currentAssignment.CarId)" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Espacio de Estacionamiento</label>
+                                    <InputSelect class="form-select" @bind-Value="currentAssignment.ParkingSpaceId">
+                                        <option value="">Seleccionar espacio...</option>
+                                        @if (availableSpaces?.Any() == true)
+                                        {
+                                            @foreach (var space in availableSpaces)
+                                            {
+                                                <option value="@space.Id">@space.DisplayName (@space.SpaceType)</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => currentAssignment.ParkingSpaceId)" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Estado</label>
+                                    <InputSelect class="form-select" @bind-Value="currentAssignment.Status">
+                                        <option value="Active">Activo</option>
+                                        <option value="Suspended">Suspendido</option>
+                                        <option value="Cancelled">Cancelado</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Fecha de Inicio</label>
+                                    <InputDate class="form-control" @bind-Value="currentAssignment.StartDate" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Fecha de Fin</label>
+                                    <InputDate class="form-control" @bind-Value="currentAssignment.EndDate" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Notas</label>
+                            <InputTextArea class="form-control" rows="3" @bind-Value="currentAssignment.Notes" 
+                                           placeholder="Notas adicionales sobre la asignación..." />
+                        </div>
+
+                        <div class="modal-footer border-0 px-0">
+                            <button type="button" class="btn btn-outline-secondary" @onclick="CloseModal">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                }
+                                <i class="bi bi-@(isEditing ? "check-circle" : "plus-circle")"></i>
+                                @(isEditing ? "Actualizar" : "Crear")
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .avatar-sm {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+    
+    .bg-gradient {
+        background-image: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-info) 100%);
+    }
+</style>
+
+@code {
+    private List<ParkingAssignment>? assignments;
+    private List<Client>? allClients;
+    private List<Car>? clientCars;
+    private List<ParkingSpace>? availableSpaces;
+    private ParkingAssignment currentAssignment = new();
+    
+    private string searchTerm = "";
+    private string selectedClientId = "";
+    private string selectedStatus = "";
+    private DateTime? startDate;
+    private DateTime? endDate;
+    
+    private bool showModal = false;
+    private bool isEditing = false;
+    private bool isLoading = true;
+    private bool isSaving = false;
+
+    private int totalAssignments;
+    private int activeAssignments;
+    private int expiredAssignments;
+    private int cancelledAssignments;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadClients();
+        await LoadAvailableSpaces();
+        await LoadAssignments();
+        await LoadStatistics();
+    }
+
+    private async Task LoadClients()
+    {
+        allClients = await DbContext.Clients
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.LastName)
+            .ThenBy(c => c.FirstName)
+            .ToListAsync();
+    }
+
+    private async Task LoadAvailableSpaces()
+    {
+        availableSpaces = await DbContext.ParkingSpaces
+            .Where(ps => ps.IsActive && ps.IsAvailable)
+            .OrderBy(ps => ps.Zone)
+            .ThenBy(ps => ps.SpaceNumber)
+            .ToListAsync();
+    }
+
+    private async Task LoadStatistics()
+    {
+        totalAssignments = await DbContext.ParkingAssignments.CountAsync();
+        activeAssignments = await DbContext.ParkingAssignments.CountAsync(pa => pa.Status == "Active" && pa.IsActive);
+        expiredAssignments = await DbContext.ParkingAssignments.CountAsync(pa => pa.Status == "Expired");
+        cancelledAssignments = await DbContext.ParkingAssignments.CountAsync(pa => pa.Status == "Cancelled");
+    }
+
+    private async Task LoadAssignments()
+    {
+        isLoading = true;
+        try
+        {
+            var query = DbContext.ParkingAssignments
+                .Include(pa => pa.Client)
+                .Include(pa => pa.Car)
+                .Include(pa => pa.ParkingSpace)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                query = query.Where(pa => pa.Client!.FirstName.Contains(searchTerm) ||
+                                         pa.Client!.LastName.Contains(searchTerm) ||
+                                         pa.Car!.LicensePlate.Contains(searchTerm) ||
+                                         pa.ParkingSpace!.SpaceNumber.Contains(searchTerm));
+            }
+
+            if (!string.IsNullOrEmpty(selectedClientId) && int.TryParse(selectedClientId, out int clientId))
+            {
+                query = query.Where(pa => pa.ClientId == clientId);
+            }
+
+            if (!string.IsNullOrEmpty(selectedStatus))
+            {
+                query = query.Where(pa => pa.Status == selectedStatus);
+            }
+
+            if (startDate.HasValue)
+            {
+                query = query.Where(pa => pa.AssignedDate >= startDate.Value);
+            }
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(pa => pa.AssignedDate <= endDate.Value);
+            }
+
+            assignments = await query
+                .OrderByDescending(pa => pa.AssignedDate)
+                .ToListAsync();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task FilterAssignments()
+    {
+        await LoadAssignments();
+    }
+
+    private async Task OnSearchKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await LoadAssignments();
+        }
+    }
+
+    private async Task ClearFilters()
+    {
+        searchTerm = "";
+        selectedClientId = "";
+        selectedStatus = "";
+        startDate = null;
+        endDate = null;
+        await LoadAssignments();
+    }
+
+    private async Task OnClientChanged()
+    {
+        if (!string.IsNullOrEmpty(selectedClientId) && int.TryParse(selectedClientId, out int clientId))
+        {
+            clientCars = await DbContext.Cars
+                .Where(c => c.ClientId == clientId && c.IsActive)
+                .OrderBy(c => c.LicensePlate)
+                .ToListAsync();
+        }
+        else
+        {
+            clientCars = new List<Car>();
+        }
+        
+        currentAssignment.CarId = 0; // Reset car selection
+        StateHasChanged();
+    }
+
+    private void ShowCreateModal()
+    {
+        currentAssignment = new ParkingAssignment 
+        { 
+            Status = "Active", 
+            IsActive = true,
+            StartDate = DateTime.Today,
+            EndDate = DateTime.Today.AddMonths(1)
+        };
+        clientCars = new List<Car>();
+        isEditing = false;
+        showModal = true;
+    }
+
+    private void ShowEditModal(ParkingAssignment assignment)
+    {
+        currentAssignment = new ParkingAssignment
+        {
+            Id = assignment.Id,
+            ClientId = assignment.ClientId,
+            CarId = assignment.CarId,
+            ParkingSpaceId = assignment.ParkingSpaceId,
+            StartDate = assignment.StartDate,
+            EndDate = assignment.EndDate,
+            Status = assignment.Status,
+            Notes = assignment.Notes,
+            IsActive = assignment.IsActive
+        };
+        
+        // Load cars for the selected client
+        _ = OnClientChanged();
+        
+        isEditing = true;
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        currentAssignment = new();
+        clientCars = new List<Car>();
+    }
+
+    private async Task SaveAssignment()
+    {
+        isSaving = true;
+        try
+        {
+            if (isEditing)
+            {
+                var existingAssignment = await DbContext.ParkingAssignments.FindAsync(currentAssignment.Id);
+                if (existingAssignment != null)
+                {
+                    existingAssignment.ClientId = currentAssignment.ClientId;
+                    existingAssignment.CarId = currentAssignment.CarId;
+                    existingAssignment.ParkingSpaceId = currentAssignment.ParkingSpaceId;
+                    existingAssignment.StartDate = currentAssignment.StartDate;
+                    existingAssignment.EndDate = currentAssignment.EndDate;
+                    existingAssignment.Status = currentAssignment.Status;
+                    existingAssignment.Notes = currentAssignment.Notes;
+                    existingAssignment.ModifiedDate = DateTime.Now;
+                }
+            }
+            else
+            {
+                DbContext.ParkingAssignments.Add(currentAssignment);
+            }
+
+            await DbContext.SaveChangesAsync();
+            CloseModal();
+            await LoadAssignments();
+            await LoadStatistics();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error al guardar: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task ViewAssignment(ParkingAssignment assignment)
+    {
+        var details = $"Cliente: {assignment.Client?.FullName}\n" +
+                     $"Vehículo: {assignment.Car?.DisplayName}\n" +
+                     $"Espacio: {assignment.ParkingSpace?.DisplayName}\n" +
+                     $"Estado: {assignment.Status}\n" +
+                     $"Fecha: {assignment.AssignedDate:dd/MM/yyyy}\n";
+        
+        if (!string.IsNullOrEmpty(assignment.Notes))
+            details += $"Notas: {assignment.Notes}";
+            
+        await JSRuntime.InvokeVoidAsync("alert", details);
+    }
+
+    private async Task RevokeAssignment(ParkingAssignment assignment)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"¿Está seguro de revocar la asignación del espacio {assignment.ParkingSpace?.SpaceNumber} para {assignment.Client?.FullName}?");
+        
+        if (confirmed)
+        {
+            assignment.Status = "Cancelled";
+            assignment.IsActive = false;
+            assignment.ModifiedDate = DateTime.Now;
+            assignment.Notes = (assignment.Notes ?? "") + $"\nRevocado el {DateTime.Now:dd/MM/yyyy HH:mm}";
+            
+            await DbContext.SaveChangesAsync();
+            await LoadAssignments();
+            await LoadStatistics();
+        }
+    }
+
+    private string GetStatusColor(string status) => status switch
+    {
+        "Active" => "success",
+        "Expired" => "warning",
+        "Cancelled" => "danger",
+        "Suspended" => "secondary",
+        _ => "primary"
+    };
+
+    private string GetStatusIcon(string status) => status switch
+    {
+        "Active" => "check-circle",
+        "Expired" => "clock",
+        "Cancelled" => "x-circle",
+        "Suspended" => "pause-circle",
+        _ => "circle"
+    };
+
+    private string GetStatusText(string status) => status switch
+    {
+        "Active" => "Activo",
+        "Expired" => "Expirado",
+        "Cancelled" => "Cancelado",
+        "Suspended" => "Suspendido",
+        _ => status
+    };
+}
