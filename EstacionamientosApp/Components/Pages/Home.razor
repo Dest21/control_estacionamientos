@@ -317,34 +317,58 @@
         await LoadDashboardData();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadDashboardData();
+            StateHasChanged();
+        }
+    }
+
     private async Task LoadDashboardData()
     {
-        totalClients = await DbContext.Clients.CountAsync(c => c.IsActive);
-        totalCars = await DbContext.Cars.CountAsync(c => c.IsActive);
-        totalSpaces = await DbContext.ParkingSpaces.CountAsync(ps => ps.IsActive);
-        occupiedSpaces = await DbContext.ParkingSpaces.CountAsync(ps => !ps.IsAvailable && ps.IsActive);
-        activeAssignments = await DbContext.ParkingAssignments.CountAsync(pa => pa.Status == "Active" && pa.IsActive);
-        
-        occupancyRate = totalSpaces > 0 ? (occupiedSpaces * 100.0 / totalSpaces) : 0;
+        try
+        {
+            totalClients = await DbContext.Clients.CountAsync(c => c.IsActive);
+            totalCars = await DbContext.Cars.CountAsync(c => c.IsActive);
+            totalSpaces = await DbContext.ParkingSpaces.CountAsync(ps => ps.IsActive);
+            occupiedSpaces = await DbContext.ParkingSpaces.CountAsync(ps => !ps.IsAvailable && ps.IsActive);
+            activeAssignments = await DbContext.ParkingAssignments.CountAsync(pa => pa.Status == "Active" && pa.IsActive);
+            
+            occupancyRate = totalSpaces > 0 ? (occupiedSpaces * 100.0 / totalSpaces) : 0;
 
-        zoneOccupancy = await DbContext.ParkingSpaces
-            .Where(ps => ps.IsActive && !string.IsNullOrEmpty(ps.Zone))
-            .GroupBy(ps => ps.Zone)
-            .Select(g => new ZoneOccupancy
-            {
-                Zone = g.Key!,
-                TotalSpaces = g.Count(),
-                OccupiedSpaces = g.Count(ps => !ps.IsAvailable)
-            })
-            .ToListAsync();
+            zoneOccupancy = await DbContext.ParkingSpaces
+                .Where(ps => ps.IsActive && !string.IsNullOrEmpty(ps.Zone))
+                .GroupBy(ps => ps.Zone)
+                .Select(g => new ZoneOccupancy
+                {
+                    Zone = g.Key!,
+                    TotalSpaces = g.Count(),
+                    OccupiedSpaces = g.Count(ps => !ps.IsAvailable)
+                })
+                .ToListAsync();
 
-        recentActivity = await DbContext.ParkingAssignments
-            .Include(pa => pa.Client)
-            .Include(pa => pa.Car)
-            .Include(pa => pa.ParkingSpace)
-            .OrderByDescending(pa => pa.AssignedDate)
-            .Take(10)
-            .ToListAsync();
+            recentActivity = await DbContext.ParkingAssignments
+                .Include(pa => pa.Client)
+                .Include(pa => pa.Car)
+                .Include(pa => pa.ParkingSpace)
+                .OrderByDescending(pa => pa.AssignedDate)
+                .Take(10)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            // En caso de error, inicializar con valores por defecto
+            totalClients = 0;
+            totalCars = 0;
+            totalSpaces = 0;
+            occupiedSpaces = 0;
+            activeAssignments = 0;
+            occupancyRate = 0;
+            zoneOccupancy = new List<ZoneOccupancy>();
+            recentActivity = new List<ParkingAssignment>();
+        }
     }
 
     private string GetZoneColorClass(string zone) => zone switch

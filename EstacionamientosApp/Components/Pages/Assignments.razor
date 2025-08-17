@@ -15,7 +15,7 @@
             <h1 class="text-3xl font-bold text-gray-900 font-poppins">Gestión de Asignaciones</h1>
             <p class="text-gray-600 mt-2">Administra las asignaciones de espacios de estacionamiento</p>
         </div>
-        <button class="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center space-x-2 hover-lift" 
+        <button class="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center space-x-2 hover-lift"
                 @onclick="ShowCreateModal">
             <i class="bi bi-plus-circle text-lg"></i>
             <span>Nueva Asignación</span>
@@ -621,6 +621,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         await LoadClients();
+        await SyncParkingSpaceAvailability(); // Sincronizar disponibilidad antes de cargar
         await LoadAvailableSpaces();
         await LoadAssignments();
         await LoadStatistics();
@@ -637,8 +638,19 @@ else
 
     private async Task LoadAvailableSpaces()
     {
-        availableSpaces = await DbContext.ParkingSpaces
-            .Where(ps => ps.IsActive && ps.IsAvailable)
+        // Cargar solo espacios que están activos Y disponibles
+        // También incluir el espacio actual si estamos editando una asignación
+        var query = DbContext.ParkingSpaces
+            .Where(ps => ps.IsActive && ps.IsAvailable);
+
+        // Si estamos editando, incluir también el espacio actualmente asignado
+        if (isEditing && currentAssignment.ParkingSpaceId > 0)
+        {
+            query = DbContext.ParkingSpaces
+                .Where(ps => ps.IsActive && (ps.IsAvailable || ps.Id == currentAssignment.ParkingSpaceId));
+        }
+
+        availableSpaces = await query
             .OrderBy(ps => ps.Zone)
             .ThenBy(ps => ps.SpaceNumber)
             .ToListAsync();
@@ -759,7 +771,7 @@ else
         StateHasChanged();
     }
 
-    private void ShowCreateModal()
+    private async void ShowCreateModal()
     {
         currentAssignment = new ParkingAssignment
         {
@@ -767,17 +779,22 @@ else
             IsActive = true,
             AssignedDate = DateTime.Now,
             StartDate = DateTime.Now,
-            EndDate = DateTime.Now.AddMonths(1)
+            EndDate = DateTime.Now.AddHours(2)
         };
         clientCars = new List<Car>();
         isEditing = false;
+
+        // Recargar espacios disponibles
+        await LoadAvailableSpaces();
+
         showModal = true;
+        StateHasChanged();
     }
 
-    private void ShowEditModal(ParkingAssignment assignment)
+    private async void ShowEditModal(ParkingAssignment assignment)
     {
         currentAssignment = new ParkingAssignment
-        
+
 {
             Id = assignment.Id,
             ClientId = assignment.ClientId,
@@ -789,12 +806,15 @@ else
             Notes = assignment.Notes,
             IsActive = assignment.IsActive
         };
-        
-        // Load cars for the selected client
-        _ = Task.Run(async () => await OnClientChanged());
-        
+
         isEditing = true;
+
+        // Load cars for the selected client and available spaces
+        await OnClientChanged();
+        await LoadAvailableSpaces();
+
         showModal = true;
+        StateHasChanged();
     }
 
     private void CloseModal()
@@ -809,11 +829,104 @@ else
         isSaving = true;
         try
         {
+            // Validaciones básicas
+            if (currentAssignment.ClientId <= 0)
+            {
+                errorMessage = "Debe seleccionar un cliente.";
+                showErrorToast = true;
+                _ = Task.Delay(3000).ContinueWith(_ => InvokeAsync(() => { showErrorToast = false; StateHasChanged(); }));
+                return;
+            }
+
+            if (currentAssignment.CarId <= 0)
+            {
+                errorMessage = "Debe seleccionar un vehículo.";
+                showErrorToast = true;
+                _ = Task.Delay(3000).ContinueWith(_ => InvokeAsync(() => { showErrorToast = false; StateHasChanged(); }));
+                return;
+            }
+
+            if (currentAssignment.ParkingSpaceId <= 0)
+            {
+                errorMessage = "Debe seleccionar un espacio de estacionamiento.";
+                showErrorToast = true;
+                _ = Task.Delay(3000).ContinueWith(_ => InvokeAsync(() => { showErrorToast = false; StateHasChanged(); }));
+                return;
+            }
+
+            // Verificar que el espacio esté disponible
+            var conflictingAssignments = await DbContext.ParkingAssignments
+                .Where(pa => pa.ParkingSpaceId == currentAssignment.ParkingSpaceId &&
+                            pa.Status == "Active" && pa.IsActive &&
+                            (!isEditing || pa.Id != currentAssignment.Id)) // Excluir la asignación actual si estamos editando
+                .Include(pa => pa.Client)
+                .Include(pa => pa.Car)
+                .Include(pa => pa.ParkingSpace)
+                .ToListAsync();
+
+            if (conflictingAssignments.Any())
+            {
+                var conflictInfo = string.Join(", ", conflictingAssignments.Select(pa =>
+                    $"ID:{pa.Id} - {pa.Client?.FullName} - {pa.Car?.LicensePlate} - Estado:{pa.Status} - Activo:{pa.IsActive}"));
+                errorMessage = $"El espacio seleccionado ya está ocupado por: {conflictInfo}";
+                showErrorToast = true;
+                _ = Task.Delay(5000).ContinueWith(_ => InvokeAsync(() => { showErrorToast = false; StateHasChanged(); }));
+                return;
+            }
+
             if (isEditing)
             {
                 var existingAssignment = await DbContext.ParkingAssignments.FindAsync(currentAssignment.Id);
                 if (existingAssignment != null)
                 {
+                    // Manejar cambios de espacio y estado
+                    var oldSpaceId = existingAssignment.ParkingSpaceId;
+                    var oldStatus = existingAssignment.Status;
+                    var newSpaceId = currentAssignment.ParkingSpaceId;
+                    var newStatus = currentAssignment.Status;
+
+                    // Si se cambió el espacio
+                    if (oldSpaceId != newSpaceId)
+                    {
+                        // Liberar el espacio anterior si la asignación anterior estaba activa
+                        if (oldStatus == "Active")
+                        {
+                            var oldSpace = await DbContext.ParkingSpaces.FindAsync(oldSpaceId);
+                            if (oldSpace != null)
+                            {
+                                oldSpace.IsAvailable = true;
+                            }
+                        }
+
+                        // Ocupar el nuevo espacio si la nueva asignación está activa
+                        if (newStatus == "Active")
+                        {
+                            var newSpace = await DbContext.ParkingSpaces.FindAsync(newSpaceId);
+                            if (newSpace != null)
+                            {
+                                newSpace.IsAvailable = false;
+                            }
+                        }
+                    }
+                    // Si solo cambió el estado (mismo espacio)
+                    else if (oldStatus != newStatus)
+                    {
+                        var space = await DbContext.ParkingSpaces.FindAsync(newSpaceId);
+                        if (space != null)
+                        {
+                            // Si cambió de activo a inactivo, liberar el espacio
+                            if (oldStatus == "Active" && newStatus != "Active")
+                            {
+                                space.IsAvailable = true;
+                            }
+                            // Si cambió de inactivo a activo, ocupar el espacio
+                            else if (oldStatus != "Active" && newStatus == "Active")
+                            {
+                                space.IsAvailable = false;
+                            }
+                        }
+                    }
+
                     existingAssignment.ClientId = currentAssignment.ClientId;
                     existingAssignment.CarId = currentAssignment.CarId;
                     existingAssignment.ParkingSpaceId = currentAssignment.ParkingSpaceId;
@@ -826,21 +939,36 @@ else
             }
             else
             {
+                // Asegurar que las fechas estén establecidas
+                if (!currentAssignment.StartDate.HasValue)
+                    currentAssignment.StartDate = DateTime.Now;
+                if (!currentAssignment.EndDate.HasValue)
+                    currentAssignment.EndDate = DateTime.Now.AddHours(2);
+
+                currentAssignment.CreatedDate = DateTime.Now;
                 DbContext.ParkingAssignments.Add(currentAssignment);
+                
+                // Marcar el espacio como ocupado
+                var parkingSpace = await DbContext.ParkingSpaces.FindAsync(currentAssignment.ParkingSpaceId);
+                if (parkingSpace != null)
+                {
+                    parkingSpace.IsAvailable = false;
+                }
             }
 
             await DbContext.SaveChangesAsync();
             CloseModal();
             await LoadAssignments();
             await LoadStatistics();
-            
+            await LoadAvailableSpaces(); // Recargar espacios disponibles
+
             successMessage = isEditing ? "Asignación actualizada exitosamente." : "Asignación creada exitosamente.";
             showSuccessToast = true;
             _ = Task.Delay(3000).ContinueWith(_ => InvokeAsync(() => { showSuccessToast = false; StateHasChanged(); }));
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error al guardar: {ex.Message}";
+            errorMessage = $"Error al guardar: {ex.InnerException?.Message ?? ex.Message}";
             showErrorToast = true;
             _ = Task.Delay(3000).ContinueWith(_ => InvokeAsync(() => { showErrorToast = false; StateHasChanged(); }));
         }
@@ -885,11 +1013,19 @@ else
                 selectedAssignmentForRevoke.IsActive = false;
                 selectedAssignmentForRevoke.ModifiedDate = DateTime.Now;
                 selectedAssignmentForRevoke.Notes = (selectedAssignmentForRevoke.Notes ?? "") + $"\nRevocado el {DateTime.Now:dd/MM/yyyy HH:mm}";
-                
+
+                // Liberar el espacio de estacionamiento
+                var parkingSpace = await DbContext.ParkingSpaces.FindAsync(selectedAssignmentForRevoke.ParkingSpaceId);
+                if (parkingSpace != null)
+                {
+                    parkingSpace.IsAvailable = true;
+                }
+
                 await DbContext.SaveChangesAsync();
                 await LoadAssignments();
                 await LoadStatistics();
-                
+                await LoadAvailableSpaces(); // Recargar espacios disponibles
+
                 successMessage = "Asignación revocada exitosamente.";
                 showSuccessToast = true;
                 _ = Task.Delay(3000).ContinueWith(_ => InvokeAsync(() => { showSuccessToast = false; StateHasChanged(); }));
@@ -935,4 +1071,39 @@ else
         "Suspended" => "Suspendido",
         _ => status
     };
+
+    private async Task SyncParkingSpaceAvailability()
+    {
+        try
+        {
+            // Obtener todos los espacios activos
+            var allSpaces = await DbContext.ParkingSpaces
+                .Where(ps => ps.IsActive)
+                .ToListAsync();
+
+            // Obtener todos los espacios que tienen asignaciones activas
+            var occupiedSpaceIds = await DbContext.ParkingAssignments
+                .Where(pa => pa.Status == "Active" && pa.IsActive)
+                .Select(pa => pa.ParkingSpaceId)
+                .Distinct()
+                .ToListAsync();
+
+            // Actualizar la disponibilidad de todos los espacios
+            foreach (var space in allSpaces)
+            {
+                var shouldBeAvailable = !occupiedSpaceIds.Contains(space.Id);
+                if (space.IsAvailable != shouldBeAvailable)
+                {
+                    space.IsAvailable = shouldBeAvailable;
+                }
+            }
+
+            await DbContext.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            // En caso de error, continuar sin mostrar mensaje al usuario
+            // ya que esto es una sincronización automática
+        }
+    }
 }
